@@ -10,14 +10,12 @@ int main(int argc, char **argv) {
 	struct texinfo texinfo = loadtexture("minecraft/pack.png");
 	GLuint shader = loadshader("data/shaders/basic.vs", "data/shaders/basic.fs");
 	struct camera camera = make_camera();
-	camera.pos.z = 2.0f;
-	camera.pos.x = 2.0f;
-	camera.rot.y = torad(-15.0f);
 
 	{
 		glUseProgram(shader);
 		shader_set_int(shader, "u_texture", 0);
-		camera_set_uniforms(&camera, shader);
+
+		camera.pos.z = 2;
 
 		struct quad_instance instances[2] = {
 			{
@@ -34,8 +32,10 @@ int main(int argc, char **argv) {
 		mesh_buffer_instances(&quad_instances, instances, sizeof(instances));
 	}
 
+	double dt = 0.0;
 	bool runloop = true;
 	while (runloop) {
+		const clock_t start = clock();
 		SDL_Event event;
 		while (SDL_PollEvent(&event)) {
 			switch (event.type) {
@@ -45,19 +45,35 @@ int main(int argc, char **argv) {
 			}
 		}
 
-		if (SDL_GetKeyboardState(NULL)[SDL_SCANCODE_LEFT]) camera.rot.y -= 0.01f;
-		if (SDL_GetKeyboardState(NULL)[SDL_SCANCODE_RIGHT]) camera.rot.y += 0.01f;
+		// Move camera
+		const uint8_t *keys = SDL_GetKeyboardState(NULL);
+		const vec3s forward = (vec3s){
+			.x = -sinf(camera.rot.y) * cosf(camera.rot.x),
+			.y = sinf(camera.rot.x),
+			.z = -cosf(camera.rot.y) * cosf(camera.rot.x),
+		};
+		const vec3s side = glms_vec3_crossn(forward, (vec3s){ .x = 0.0f, .y = 1.0f, .z = 0.0f });
+		const float speed = 1.5f;
+		camera.pos = glms_vec3_add(camera.pos, glms_vec3_mul(forward, glms_vec3_fill((float)(keys[SDL_SCANCODE_W] - keys[SDL_SCANCODE_S]) * speed * dt)));
+		camera.pos = glms_vec3_add(camera.pos, glms_vec3_mul(side, glms_vec3_fill((float)(keys[SDL_SCANCODE_D] - keys[SDL_SCANCODE_A]) * speed * dt)));
+
+		const float sens = 1.0f / 1000.0f;
+		camera.rot.y -= (get_mouse_pos().x - (get_window_sizept().x / 2.0f)) * sens;
+		camera.rot.x -= (get_mouse_pos().y - (get_window_sizept().y / 2.0f)) * sens;
+		SDL_WarpMouseInWindow(g_window, get_window_sizept().x / 2, get_window_sizept().y / 2);
+
+		camera_set_uniforms(&camera, shader);
 		
 		glViewport(0, 0, get_window_size().x, get_window_size().y);
 		glClearColor(0.4f, 0.8f, 1.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 		glUseProgram(shader);
-		camera_set_uniforms(&camera, shader);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, texinfo.tex);
 		glBindVertexArray(quad_instances.vao);
 		glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL, 2);
 		SDL_GL_SwapWindow(g_window);
+		dt = (double)(clock() - start) / (double)CLOCKS_PER_SEC;
 	}
 
 	glDeleteProgram(shader);

@@ -123,6 +123,16 @@ ivec2s get_window_size(void) {
 	SDL_GetWindowSizeInPixels(g_window, &v.x, &v.y);
 	return v;
 }
+ivec2s get_window_sizept(void) {
+	ivec2s v;
+	SDL_GetWindowSize(g_window, &v.x, &v.y);
+	return v;
+}
+ivec2s get_mouse_pos(void) {
+	ivec2s v;
+	SDL_GetMouseState(&v.x, &v.y);
+	return v;
+}
 
 struct camera make_camera(void) {
 	return (struct camera) {
@@ -135,7 +145,7 @@ mat4s camera_get_proj(const struct camera *camera) {
 	return glms_perspective(camera->fov / 180.0f * M_PI, (float)get_window_size().x / (float)get_window_size().y, 0.1f, 1000.0f);
 }
 mat4s camera_get_view(const struct camera *camera) {
-	return glms_translate(glms_rotate_y(glms_rotate_x(glms_mat4_identity(), camera->rot.x), camera->rot.y), glms_vec3_negate(camera->pos));
+	return glms_translate(glms_rotate_y(glms_rotate_x(glms_mat4_identity(), -camera->rot.x), -camera->rot.y), glms_vec3_negate(camera->pos));
 }
 void camera_set_uniforms(const struct camera *camera, GLuint shader) {
 	const mat4s proj = camera_get_proj(camera),

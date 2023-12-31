@@ -1,11 +1,13 @@
 #ifndef _ecraft_h
 #define _ecraft_h
+#include <pthread.h>
 #include <stdbool.h>
 #include <stddef.h>
 #include <stdio.h>
 #include <stdint.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 
 #include <cglm/struct.h>
 #include <glad/glad.h>
@@ -32,6 +34,8 @@ void shader_set_vec4(GLuint shader, const char *var, const vec4s *val);
 void shader_set_mat4(GLuint shader, const char *var, const mat4s *val);
 
 ivec2s get_window_size(void);
+ivec2s get_window_sizept(void);
+ivec2s get_mouse_pos(void);
 
 struct camera {
 	vec3s pos;
