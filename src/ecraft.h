@@ -33,6 +33,19 @@ void shader_set_mat4(GLuint shader, const char *var, const mat4s *val);
 
 ivec2s get_window_size(void);
 
+struct camera {
+	vec3s pos;
+	vec2s rot;
+	float fov;
+};
+struct camera make_camera(void);
+mat4s camera_get_proj(const struct camera *camera);
+mat4s camera_get_view(const struct camera *camera);
+void camera_set_uniforms(const struct camera *camera, GLuint shader);
+
+#define torad(degrees) ((degrees)/180.0f*M_PI)
+#define todeg(radians) ((radians)/M_PI*180.0f)
+
 //
 // Window and context creation
 //

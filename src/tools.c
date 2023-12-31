@@ -124,3 +124,24 @@ ivec2s get_window_size(void) {
 	return v;
 }
 
+struct camera make_camera(void) {
+	return (struct camera) {
+		.pos = glms_vec3_zero(),
+		.rot = glms_vec2_zero(),
+		.fov = 90.0f,
+	};
+}
+mat4s camera_get_proj(const struct camera *camera) {
+	return glms_perspective(camera->fov / 180.0f * M_PI, (float)get_window_size().x / (float)get_window_size().y, 0.1f, 1000.0f);
+}
+mat4s camera_get_view(const struct camera *camera) {
+	return glms_translate(glms_rotate_y(glms_rotate_x(glms_mat4_identity(), camera->rot.x), camera->rot.y), glms_vec3_negate(camera->pos));
+}
+void camera_set_uniforms(const struct camera *camera, GLuint shader) {
+	const mat4s proj = camera_get_proj(camera),
+				view = camera_get_view(camera);
+	glUseProgram(shader);
+	shader_set_mat4(shader, "u_proj", &proj);
+	shader_set_mat4(shader, "u_view", &view);
+}
+

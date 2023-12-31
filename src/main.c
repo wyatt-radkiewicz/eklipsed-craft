@@ -9,14 +9,15 @@ int main(int argc, char **argv) {
 	struct mesh quad_instances = gen_instanced_quad();
 	struct texinfo texinfo = loadtexture("minecraft/pack.png");
 	GLuint shader = loadshader("data/shaders/basic.vs", "data/shaders/basic.fs");
+	struct camera camera = make_camera();
+	camera.pos.z = 2.0f;
+	camera.pos.x = 2.0f;
+	camera.rot.y = torad(-15.0f);
 
 	{
 		glUseProgram(shader);
 		shader_set_int(shader, "u_texture", 0);
-
-		mat4s mat = glms_mat4_identity();
-		shader_set_mat4(shader, "u_proj", &mat);
-		shader_set_mat4(shader, "u_view", &mat);
+		camera_set_uniforms(&camera, shader);
 
 		struct quad_instance instances[2] = {
 			{
@@ -43,11 +44,15 @@ int main(int argc, char **argv) {
 				break;
 			}
 		}
+
+		if (SDL_GetKeyboardState(NULL)[SDL_SCANCODE_LEFT]) camera.rot.y -= 0.01f;
+		if (SDL_GetKeyboardState(NULL)[SDL_SCANCODE_RIGHT]) camera.rot.y += 0.01f;
 		
 		glViewport(0, 0, get_window_size().x, get_window_size().y);
 		glClearColor(0.4f, 0.8f, 1.0f, 1.0f);
 		glClear(GL_COLOR_BUFFER_BIT);
 		glUseProgram(shader);
+		camera_set_uniforms(&camera, shader);
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, texinfo.tex);
 		glBindVertexArray(quad_instances.vao);
