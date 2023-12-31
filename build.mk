@@ -9,12 +9,13 @@
 
 # Variables
 DEPS      := sdl2 sdl2_mixer cglm
+DEPS_LINK := sdl2 sdl2_mixer
 SRCS      := $(shell find . -name "*.c" | awk '{print substr($$1,3)}')
 OBJS      = $(addprefix $(BUILD_DIR)/,$(patsubst %.c,%.o,$(SRCS)))
 
 # Flags
 DEPS_CFLAGS  := $(foreach dep,$(DEPS),$(shell pkg-config --cflags $(dep)))
-DEPS_LDFLAGS := $(foreach dep,$(DEPS),$(shell pkg-config --libs $(dep)))
+DEPS_LDFLAGS := $(foreach dep,$(DEPS_LINK),$(shell pkg-config --libs $(dep)))
 CFLAGS       := -I$(SRC_DIR) -I$(EXT_DIR)/include $(CFLAGS) $(DEPS_CFLAGS)
 LDFLAGS      := $(LDFLAGS) $(DEPS_LDFLAGS)
 
