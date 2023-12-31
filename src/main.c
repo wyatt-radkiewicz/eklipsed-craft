@@ -18,9 +18,14 @@ int main(int argc, char **argv) {
 		shader_set_mat4(shader, "u_proj", &mat);
 		shader_set_mat4(shader, "u_view", &mat);
 
-		struct quad_instance instances[1] = {
+		struct quad_instance instances[2] = {
 			{
-				.mat = glms_mat4_identity(),
+				.mat = glms_scale_uni(glms_mat4_identity(), 0.4f),
+				.uv_pos = glms_vec2_zero(),
+				.uv_size = glms_vec2_one(),
+			},
+			{
+				.mat = glms_scale_uni(glms_translate(glms_mat4_identity(), (vec3s){ .x = 0.0f, .y = 0.75f, .z = 0.0f }), 0.25f),
 				.uv_pos = glms_vec2_zero(),
 				.uv_size = glms_vec2_one(),
 			},
@@ -46,7 +51,7 @@ int main(int argc, char **argv) {
 		glActiveTexture(GL_TEXTURE0);
 		glBindTexture(GL_TEXTURE_2D, texinfo.tex);
 		glBindVertexArray(quad_instances.vao);
-		glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL, 1);
+		glDrawElementsInstanced(GL_TRIANGLES, 6, GL_UNSIGNED_INT, NULL, 2);
 		SDL_GL_SwapWindow(g_window);
 	}
 
