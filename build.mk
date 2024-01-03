@@ -12,6 +12,7 @@ DEPS      := sdl2 sdl2_mixer cglm
 DEPS_LINK := sdl2 sdl2_mixer
 SRCS      := $(shell find . -name "*.c" | awk '{print substr($$1,3)}')
 OBJS      = $(addprefix $(BUILD_DIR)/,$(patsubst %.c,%.o,$(SRCS)))
+CC        ?= gcc
 
 # Flags
 DEPS_CFLAGS  := $(foreach dep,$(DEPS),$(shell pkg-config --cflags $(dep)))
@@ -21,10 +22,10 @@ LDFLAGS      := $(LDFLAGS) $(DEPS_LDFLAGS)
 
 # Build Modes
 ifeq ($(TARGET),dbg)
-CFLAGS += -g -O0 -Wall
+CFLAGS += -g -O0 -Wall -std=gnu2x
 endif
-ifeq ($(TARGET),dbg)
-CFLAGS += -O2 -Wall
+ifeq ($(TARGET),rel)
+CFLAGS += -O2 -Wall -std=gnu2x
 endif
 
 # Linking
