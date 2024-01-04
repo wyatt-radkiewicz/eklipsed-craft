@@ -1,6 +1,7 @@
 #ifndef _TOOLS_H
 #define _TOOLS_H
 
+#include <assert.h>
 #include <math.h>
 #include <stdbool.h>
 #include <stddef.h>
@@ -131,6 +132,18 @@ void *_vector_reserve_exact(void *self, u32 elemsize, u32 capacity);
 void *_vector_push(void *self, u32 elemsize, const void *val);
 #define vector_pop(vector) _vector_pop((vector), sizeof(*(vector)))
 void *_vector_pop(void *self, u32 elemsize);
+
+//
+// Game specific
+//
+enum cube_face {
+	FACE_PZ,
+	FACE_NZ,
+	FACE_PY,
+	FACE_NY,
+	FACE_PX,
+	FACE_NX,
+};
 
 #endif
 

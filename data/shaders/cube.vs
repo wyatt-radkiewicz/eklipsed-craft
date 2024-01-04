@@ -2,26 +2,37 @@
 in vec3 apos;
 in vec3 anorm;
 in vec2 auv;
-in int auv_idx;
+in int afaceid;
 in mat4 iworld;
+in vec4 ipz;
+in vec4 inz;
+in vec4 ipy;
+in vec4 iny;
+in vec4 ipx;
+in vec4 inx;
 
 out vec2 stexcoords;
 out vec3 snormal;
 
 uniform mat4 uproj;
 uniform mat4 uview;
-uniform sampler2D utexuvs;
-uniform int utexw;
-uniform float utex_xstep;
-uniform float utex_ystep;
 
 void main() {
+	vec4 uvt;
+	int id = gl_InstanceID * 6 + afaceid;
+
 	gl_Position = uproj * uview * iworld * vec4(apos.xyz, 1.0);
 	snormal = (iworld * vec4(anorm, 1.0)).xyz;
-	vec4 packed = texture(utexuvs, vec2(
-		(float(id % utexw) + 0.5) * utex_xstep,
-		(float(id / utexh) + 0.5) * utex_ystep,
-	));
-	stexcoords = (auv * packed.zw) + packed.xy;
+
+	switch (afaceid) {
+	case 0: uvt = ipz; break;
+	case 1: uvt = inz; break;
+	case 2: uvt = ipy; break;
+	case 3: uvt = iny; break;
+	case 4: uvt = ipx; break;
+	case 5: uvt = inx; break;
+	}
+
+	stexcoords = (auv * uvt.zw) + uvt.xy;
 }
 

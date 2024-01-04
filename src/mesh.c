@@ -75,11 +75,11 @@ bool vtx_attr_is_end(const struct vtx_attr *attr) {
 	return !attr || !attr->len;
 }
 
-const struct vtx_attr *vtx_attrs_quad(void) {
+const struct vtx_attr *vtx_attrs_basic(void) {
 	static const struct vtx_attr attrs[] = {
-		GEN_VTX_ATTR(struct quad_vtx, pos, "apos"),
-		GEN_VTX_ATTR(struct quad_vtx, norm, "anorm"),
-		GEN_VTX_ATTR(struct quad_vtx, uv, "auv"),
+		GEN_VTX_ATTR(struct basic_vtx, pos, "apos"),
+		GEN_VTX_ATTR(struct basic_vtx, norm, "anorm"),
+		GEN_VTX_ATTR(struct basic_vtx, uv, "auv"),
 		VTX_ATTR_END
 	};
 	return attrs;
@@ -93,7 +93,7 @@ const struct vtx_attr *ibo_attrs_quad(void) {
 	return attrs;
 }
 void quad_upload_vtxs(struct mesh *mesh) {
-	static const struct quad_vtx vtxs[] = {
+	static const struct basic_vtx vtxs[] = {
 		// Top-left
 		{
 			.pos =  (vec3s){ .x = -0.5f, .y = 0.5f, .z = 0.0f },
@@ -123,6 +123,231 @@ void quad_upload_vtxs(struct mesh *mesh) {
 	static const u32 indexes[] = {
 		0, 2, 1,
 		1, 2, 3,
+	};
+
+	mesh_upload_verts(mesh, vtxs, sizeof(vtxs));
+	mesh_upload_indexes(mesh, indexes, sizeof(indexes));
+}
+
+const struct vtx_attr *vtx_attrs_cube(void) {
+	static const struct vtx_attr attrs[] = {
+		GEN_VTX_ATTR(struct cube_vtx, pos, "apos"),
+		GEN_VTX_ATTR(struct cube_vtx, norm, "anorm"),
+		GEN_VTX_ATTR(struct cube_vtx, uv, "auv"),
+		GEN_VTX_ATTR(struct cube_vtx, face, "afaceid"),
+		VTX_ATTR_END
+	};
+	return attrs;
+}
+const struct vtx_attr *ibo_attrs_cube(void) {
+	static const struct vtx_attr attrs[] = {
+		GEN_VTX_ATTR(struct cube_inst, world, "iworld"),
+		GEN_VTX_ATTR(struct cube_inst, pz, "ipz"),
+		GEN_VTX_ATTR(struct cube_inst, nz, "inz"),
+		GEN_VTX_ATTR(struct cube_inst, py, "ipy"),
+		GEN_VTX_ATTR(struct cube_inst, ny, "iny"),
+		GEN_VTX_ATTR(struct cube_inst, px, "ipx"),
+		GEN_VTX_ATTR(struct cube_inst, nx, "inx"),
+		VTX_ATTR_END
+	};
+	return attrs;
+}
+void cube_upload_vtxs(struct mesh *mesh) {
+	static const struct cube_vtx vtxs[] = {
+		// PZ Top-left
+		{
+			.pos =  (vec3s){ .x = -0.5f, .y = 0.5f, .z = 0.5f },
+			.norm = (vec3s){ .x = 0.0f,	 .y = 0.0f, .z = 1.0f },
+			.uv =   (vec2s){ .x = 0.0f,  .y = 1.0f },
+			.face = FACE_PZ,
+		},
+		// PZ Top-right
+		{
+			.pos =  (vec3s){ .x = 0.5f, .y = 0.5f, .z = 0.5f },
+			.norm = (vec3s){ .x = 0.0f, .y = 0.0f, .z = 1.0f },
+			.uv =   (vec2s){ .x = 1.0f, .y = 1.0f },
+			.face = FACE_PZ,
+		},
+		// PZ Bottom-left
+		{
+			.pos =  (vec3s){ .x = -0.5f, .y = -0.5f, .z = 0.5f },
+			.norm = (vec3s){ .x = 0.0f,  .y = 0.0f, .z = 1.0f },
+			.uv =   (vec2s){ .x = 0.0f,  .y = 0.0f },
+			.face = FACE_PZ,
+		},
+		// PZ Bottom-right
+		{
+			.pos =  (vec3s){ .x = 0.5f, .y = -0.5f, .z = 0.5f },
+			.norm = (vec3s){ .x = 0.0f, .y = 0.0f, .z = 1.0f },
+			.uv =   (vec2s){ .x = 1.0f, .y = 0.0f },
+			.face = FACE_PZ,
+		},
+
+		// NZ Top-right
+		{
+			.pos =  (vec3s){ .x = 0.5f, .y = 0.5f, .z = -0.5f },
+			.norm = (vec3s){ .x = 0.0f, .y = 0.0f, .z = -1.0f },
+			.uv =   (vec2s){ .x = 1.0f, .y = 1.0f },
+			.face = FACE_NZ,
+		},
+		// NZ Top-left
+		{
+			.pos =  (vec3s){ .x = -0.5f, .y = 0.5f, .z = -0.5f },
+			.norm = (vec3s){ .x = 0.0f,	 .y = 0.0f, .z = -1.0f },
+			.uv =   (vec2s){ .x = 0.0f,  .y = 1.0f },
+			.face = FACE_NZ,
+		},
+		// NZ Bottom-right
+		{
+			.pos =  (vec3s){ .x = 0.5f, .y = -0.5f, .z = -0.5f },
+			.norm = (vec3s){ .x = 0.0f, .y = 0.0f, .z = -1.0f },
+			.uv =   (vec2s){ .x = 1.0f, .y = 0.0f },
+			.face = FACE_NZ,
+		},
+		// NZ Bottom-left
+		{
+			.pos =  (vec3s){ .x = -0.5f, .y = -0.5f, .z = -0.5f },
+			.norm = (vec3s){ .x = 0.0f,  .y = 0.0f, .z = -1.0f },
+			.uv =   (vec2s){ .x = 0.0f,  .y = 0.0f },
+			.face = FACE_NZ,
+		},
+
+		// PY Top-left
+		{
+			.pos =  (vec3s){ .x = -0.5f, .y = 0.5f, .z = -0.5f },
+			.norm = (vec3s){ .x = 0.0f,	 .y = 0.0f, .z = -1.0f },
+			.uv =   (vec2s){ .x = 0.0f,  .y = 0.0f },
+			.face = FACE_PY,
+		},
+		// PY Top-right
+		{
+			.pos =  (vec3s){ .x = 0.5f, .y = 0.5f, .z = -0.5f },
+			.norm = (vec3s){ .x = 0.0f, .y = 0.0f, .z = -1.0f },
+			.uv =   (vec2s){ .x = 1.0f, .y = 0.0f },
+			.face = FACE_PY,
+		},
+		// PY Bottom-left
+		{
+			.pos =  (vec3s){ .x = -0.5f, .y = 0.5f, .z = 0.5f },
+			.norm = (vec3s){ .x = 0.0f,	 .y = 0.0f, .z = 1.0f },
+			.uv =   (vec2s){ .x = 0.0f,  .y = 1.0f },
+			.face = FACE_PY,
+		},
+		// PY Bottom-right
+		{
+			.pos =  (vec3s){ .x = 0.5f, .y = 0.5f, .z = 0.5f },
+			.norm = (vec3s){ .x = 0.0f, .y = 0.0f, .z = 1.0f },
+			.uv =   (vec2s){ .x = 1.0f, .y = 1.0f },
+			.face = FACE_PY,
+		},
+
+		// NY Top-right
+		{
+			.pos =  (vec3s){ .x = 0.5f, .y = -0.5f, .z = -0.5f },
+			.norm = (vec3s){ .x = 0.0f, .y = 0.0f, .z = -1.0f },
+			.uv =   (vec2s){ .x = 1.0f, .y = 0.0f },
+			.face = FACE_NY,
+		},
+		// NY Top-left
+		{
+			.pos =  (vec3s){ .x = -0.5f, .y = -0.5f, .z = -0.5f },
+			.norm = (vec3s){ .x = 0.0f,	 .y = 0.0f, .z = -1.0f },
+			.uv =   (vec2s){ .x = 0.0f,  .y = 0.0f },
+			.face = FACE_NY,
+		},
+		// NY Bottom-right
+		{
+			.pos =  (vec3s){ .x = 0.5f, .y = -0.5f, .z = 0.5f },
+			.norm = (vec3s){ .x = 0.0f, .y = 0.0f, .z = 1.0f },
+			.uv =   (vec2s){ .x = 1.0f, .y = 1.0f },
+			.face = FACE_NY,
+		},
+		// NY Bottom-left
+		{
+			.pos =  (vec3s){ .x = -0.5f, .y = -0.5f, .z = 0.5f },
+			.norm = (vec3s){ .x = 0.0f,	 .y = 0.0f, .z = 1.0f },
+			.uv =   (vec2s){ .x = 0.0f,  .y = 1.0f },
+			.face = FACE_NY,
+		},
+
+		// PX Top-right
+		{
+			.pos =  (vec3s){ .x = 0.5f, .y = 0.5f, .z = 0.5f },
+			.norm = (vec3s){ .x = 0.0f, .y = 0.0f, .z = 1.0f },
+			.uv =   (vec2s){ .x = 1.0f, .y = 1.0f },
+			.face = FACE_PX,
+		},
+		// PX Top-right
+		{
+			.pos =  (vec3s){ .x = 0.5f, .y = 0.5f, .z = -0.5f },
+			.norm = (vec3s){ .x = 0.0f, .y = 0.0f, .z = -1.0f },
+			.uv =   (vec2s){ .x = 0.0f, .y = 1.0f },
+			.face = FACE_PX,
+		},
+		// PX Bottom-right
+		{
+			.pos =  (vec3s){ .x = 0.5f, .y = -0.5f, .z = 0.5f },
+			.norm = (vec3s){ .x = 0.0f, .y = 0.0f, .z = 1.0f },
+			.uv =   (vec2s){ .x = 1.0f, .y = 0.0f },
+			.face = FACE_PX,
+		},
+		// PX Bottom-right
+		{
+			.pos =  (vec3s){ .x = 0.5f, .y = -0.5f, .z = -0.5f },
+			.norm = (vec3s){ .x = 0.0f, .y = 0.0f, .z = -1.0f },
+			.uv =   (vec2s){ .x = 0.0f, .y = 0.0f },
+			.face = FACE_PX,
+		},
+
+		// NX Top-right
+		{
+			.pos =  (vec3s){ .x = -0.5f, .y = 0.5f, .z = -0.5f },
+			.norm = (vec3s){ .x = 0.0f, .y = 0.0f, .z = -1.0f },
+			.uv =   (vec2s){ .x = 0.0f, .y = 1.0f },
+			.face = FACE_NX,
+		},
+		// NX Top-right
+		{
+			.pos =  (vec3s){ .x = -0.5f, .y = 0.5f, .z = 0.5f },
+			.norm = (vec3s){ .x = 0.0f, .y = 0.0f, .z = 1.0f },
+			.uv =   (vec2s){ .x = 1.0f, .y = 1.0f },
+			.face = FACE_NX,
+		},
+		// NX Bottom-right
+		{
+			.pos =  (vec3s){ .x = -0.5f, .y = -0.5f, .z = -0.5f },
+			.norm = (vec3s){ .x = 0.0f, .y = 0.0f, .z = -1.0f },
+			.uv =   (vec2s){ .x = 0.0f, .y = 0.0f },
+			.face = FACE_NX,
+		},
+		// NX Bottom-right
+		{
+			.pos =  (vec3s){ .x = -0.5f, .y = -0.5f, .z = 0.5f },
+			.norm = (vec3s){ .x = 0.0f, .y = 0.0f, .z = 1.0f },
+			.uv =   (vec2s){ .x = 1.0f, .y = 0.0f },
+			.face = FACE_NX,
+		},
+	};
+	
+	static const u32 indexes[] = {
+		// PZ
+		0, 2, 1,
+		1, 2, 3,
+		// NZ
+		4+0, 4+2, 4+1,
+		4+1, 4+2, 4+3,
+		// PY
+		4*2+0, 4*2+2, 4*2+1,
+		4*2+1, 4*2+2, 4*2+3,
+		// NY
+		4*3+0, 4*3+2, 4*3+1,
+		4*3+1, 4*3+2, 4*3+3,
+		// PY
+		4*4+0, 4*4+2, 4*4+1,
+		4*4+1, 4*4+2, 4*4+3,
+		// NY
+		4*5+0, 4*5+2, 4*5+1,
+		4*5+1, 4*5+2, 4*5+3,
 	};
 
 	mesh_upload_verts(mesh, vtxs, sizeof(vtxs));

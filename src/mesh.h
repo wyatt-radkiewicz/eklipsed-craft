@@ -50,7 +50,7 @@ void mesh_upload_instances(struct mesh *self, const void *data, usize size);
 u32 vtx_attr_num_locations(const struct vtx_attr *attr);
 bool vtx_attr_is_end(const struct vtx_attr *attr);
 
-struct quad_vtx {
+struct basic_vtx {
 	vec3s pos;
 	vec3s norm;
 	vec2s uv;
@@ -60,9 +60,26 @@ struct quad_inst {
 	vec4s uv;
 };
 
-const struct vtx_attr *vtx_attrs_quad(void);
+const struct vtx_attr *vtx_attrs_basic(void);
 const struct vtx_attr *ibo_attrs_quad(void);
 void quad_upload_vtxs(struct mesh *mesh);
+
+struct cube_vtx {
+	vec3s pos;
+	vec3s norm;
+	vec2s uv;
+	int face;
+};
+struct cube_inst {
+	mat4s world;
+	vec4s pz, nz;
+	vec4s py, ny;
+	vec4s px, nx;
+};
+
+const struct vtx_attr *vtx_attrs_cube(void);
+const struct vtx_attr *ibo_attrs_cube(void);
+void cube_upload_vtxs(struct mesh *mesh);
 
 #endif
 

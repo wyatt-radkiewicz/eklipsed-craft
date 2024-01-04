@@ -11,7 +11,7 @@ struct texinfo {
 	u32 width, height;
 };
 struct texinfo texinfo_load(const char *path);
-struct texinfo texinfo_init(u32 width, u32 height);
+struct texinfo texinfo_init(u32 width, u32 height, bool rgb, bool use_f32, bool mipmap);
 void tex_bind(tex_t tex, u32 slot);
 
 #endif

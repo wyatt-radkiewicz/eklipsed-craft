@@ -3,7 +3,7 @@
 #include "texture.h"
 
 struct texinfo texinfo_load(const char *path) {
-	struct texinfo texinfo = texinfo_init(0, 0);
+	struct texinfo texinfo = texinfo_init(0, 0, false, false, true);
     stbi_set_flip_vertically_on_load(true);
 
 	int width, height, num_channels;
@@ -21,7 +21,7 @@ struct texinfo texinfo_load(const char *path) {
 
 	return texinfo;
 }
-struct texinfo texinfo_init(u32 width, u32 height) {
+struct texinfo texinfo_init(u32 width, u32 height, bool rgb, bool use_f32, bool mipmap) {
 	struct texinfo texinfo = (struct texinfo){ .width = width, .height = height };
 
 	glGenTextures(1, &texinfo.tex);
@@ -32,8 +32,8 @@ struct texinfo texinfo_init(u32 width, u32 height) {
     glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
 	
 	if (width && height) {
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texinfo.width, texinfo.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-    	glGenerateMipmap(GL_TEXTURE_2D);
+		glTexImage2D(GL_TEXTURE_2D, 0, rgb ? GL_RGB : GL_RGBA, texinfo.width, texinfo.height, 0, GL_RGBA, use_f32 ? GL_FLOAT : GL_UNSIGNED_BYTE, NULL);
+    	if (mipmap) glGenerateMipmap(GL_TEXTURE_2D);
 	}
 	
 	return texinfo;
