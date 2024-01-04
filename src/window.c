@@ -93,14 +93,20 @@ static void window_handle_event(struct window *window, const SDL_Event *event) {
 	case SDL_MOUSEMOTION:
 		window->mousepos.x = event->motion.x;
 		window->mousepos.y = event->motion.y;
-		window->mousevel.x = event->motion.xrel;
-		window->mousevel.y = event->motion.yrel;
 		break;
 	}
-
-	if (window->lock_mouse) SDL_WarpMouseInWindow(window->sdl_window, window->size.x / 2, window->size.y / 2);
 }
 f32 window_get_ratio(struct window *self) {
 	return (f32)self->size.x / (f32)self->size.y;
+}
+void window_set_lock_mouse(struct window *self, bool lock) {
+	self->lock_mouse = lock;
+	SDL_SetWindowMouseGrab(self->sdl_window, lock);
+	SDL_SetRelativeMouseMode(lock);
+}
+void window_update_inputs(struct window *self) {
+	if (self->lock_mouse) {
+		SDL_GetRelativeMouseState(&self->mouserel.x, &self->mouserel.y);
+	}
 }
 

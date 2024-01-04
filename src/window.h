@@ -15,7 +15,7 @@ struct window {
 	SDL_GLContext *gl_context;
 
 	bool should_close, lock_mouse;
-	ivec2s size, mousepos, mousevel;
+	ivec2s size, mousepos, mouserel;
 	window_event_handler_t *handlers;
 };
 
@@ -23,6 +23,8 @@ bool window_init(struct window *self, const char *title, ivec2s size);
 void window_deinit(struct window *self);
 void window_poll_events(struct window *self);
 f32 window_get_ratio(struct window *self);
+void window_set_lock_mouse(struct window *self, bool lock);
+void window_update_inputs(struct window *self);
 
 #endif
 

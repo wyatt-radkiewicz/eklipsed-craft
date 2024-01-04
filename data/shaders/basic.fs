@@ -6,7 +6,6 @@ in vec3 snormal;
 
 uniform sampler2D utexture;
 
-void main()
-{
+void main() {
     FragColor = texture(utexture, stexcoords);
 } 

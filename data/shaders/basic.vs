@@ -11,8 +11,7 @@ out vec3 snormal;
 uniform mat4 uproj;
 uniform mat4 uview;
 
-void main()
-{
+void main() {
 	gl_Position = uproj * uview * iworld * vec4(apos.xyz, 1.0);
 	snormal = (iworld * vec4(anorm, 1.0)).xyz;
 	stexcoords = (itexmat * auv).xy;
