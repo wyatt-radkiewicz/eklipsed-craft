@@ -1,5 +1,5 @@
+#include "mesh.h"
 #include "shader.h"
-#include "tools.h"
 
 static GLuint compile_shader(const char *spath, GLint type) {
 	const char *const src = loadfile(spath);
@@ -25,7 +25,8 @@ static GLuint compile_shader(const char *spath, GLint type) {
 	return shader;
 }
 
-shader_t shader_load(const char *vs_path, const char *fs_path) {
+shader_t shader_load(const char *vs_path, const char *fs_path,
+	const struct vtx_attr *vtx_attrs, const struct vtx_attr *ibo_attrs) {
 	GLuint vert = compile_shader(vs_path, GL_VERTEX_SHADER),
 		   frag = compile_shader(fs_path, GL_FRAGMENT_SHADER);
 	if (!vert || !frag) {
@@ -37,6 +38,18 @@ shader_t shader_load(const char *vs_path, const char *fs_path) {
 	GLuint shader = glCreateProgram();
 	glAttachShader(shader, vert);
 	glAttachShader(shader, frag);
+
+	// Set the attrib locations
+	u32 loc = 0;
+	while (!vtx_attr_is_end(vtx_attrs)) {
+		glBindAttribLocation(shader, loc, vtx_attrs->name);
+		loc += vtx_attr_num_locations(vtx_attrs++);
+	}
+	while (!vtx_attr_is_end(ibo_attrs)) {
+		glBindAttribLocation(shader, loc, ibo_attrs->name);
+		loc += vtx_attr_num_locations(ibo_attrs++);
+	}
+
 	glLinkProgram(shader);
 
 	GLint linked;
@@ -58,10 +71,10 @@ shader_t shader_load(const char *vs_path, const char *fs_path) {
 	glDetachShader(shader, frag);
 	return shader;
 }
-void shader_seti(shader_t self, const char *var, int val) {
+void shader_seti(shader_t self, const char *var, i32 val) {
 	glUniform1i(glGetUniformLocation(self, var), val);
 }
-void shader_setf(shader_t self, const char *var, float val) {
+void shader_setf(shader_t self, const char *var, f32 val) {
 	glUniform1f(glGetUniformLocation(self, var), val);
 }
 void shader_setv2(shader_t self, const char *var, vec2s val) {

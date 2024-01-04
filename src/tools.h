@@ -8,7 +8,7 @@
 #include <stdio.h>
 #include <string.h>
 
-#include <cglm/cglm.h>
+#include <cglm/struct.h>
 
 //
 // Type definitions
@@ -21,6 +21,8 @@ typedef uint32_t u32;
 typedef int32_t i32;
 typedef uint64_t u64;
 typedef int64_t i64;
+typedef float f32;
+typedef double f64;
 typedef size_t usize;
 typedef uintptr_t uptr;
 typedef intptr_t iptr;
@@ -121,7 +123,10 @@ void *_vector_resize(void *self, u32 elemsize, u32 len);
 void *_vector_reserve(void *self, u32 elemsize, u32 capacity);
 #define vector_reserve_exact(vector, capacity) _vector_reserve_exact((vector), sizeof(*(vector)), capacity)
 void *_vector_reserve_exact(void *self, u32 elemsize, u32 capacity);
-#define vector_push(vector, val) _vector_push((vector), sizeof(*(vector)), (const void *)(val))
+#define vector_push(vector, ...) ({ \
+	typeof(*(vector)) _val = (__VA_ARGS__); \
+	_vector_push((vector), sizeof(*(vector)), &(_val)); \
+})
 void *_vector_push(void *self, u32 elemsize, const void *val);
 #define vector_pop(vector) _vector_pop((vector), sizeof(*(vector)))
 void *_vector_pop(void *self, u32 elemsize);

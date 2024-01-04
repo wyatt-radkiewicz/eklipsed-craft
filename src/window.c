@@ -7,6 +7,8 @@ static bool _sdl2_inited = false;
 static bool _glad_loaded = false;
 static usize _num_windows = 0;
 
+static void window_handle_event(struct window *window, const SDL_Event *event);
+
 static bool sdl2_init(void) {
 	if (_sdl2_inited) return true;
 
@@ -52,15 +54,17 @@ bool window_init(struct window *self, const char *title, ivec2s size) {
 	}
 	_glad_loaded = true;
 
-	glViewport(0, 0, 800, 600);
+	glViewport(0, 0, self->size.x, self->size.y);
 
 	_num_windows++;
+	self->handlers = vector_push(self->handlers, window_handle_event);
 	
 	return true;
 }
 void window_deinit(struct window *self) {
 	SDL_GL_DeleteContext(self->gl_context);
 	SDL_DestroyWindow(self->sdl_window);
+	vector_deinit(self->handlers);
 	*self = (struct window){0};
 	_num_windows--;
 
@@ -75,5 +79,28 @@ void window_poll_events(struct window *self) {
 			if (self->handlers[i]) self->handlers[i](self, &event);
 		}
 	}
+}
+static void window_handle_event(struct window *window, const SDL_Event *event) {
+	switch (event->type) {
+	case SDL_QUIT:
+		window->should_close = true;
+		break;
+	case SDL_WINDOWEVENT:
+		if (event->window.event != SDL_WINDOWEVENT_RESIZED) break;
+		window->size.x = event->window.data1;
+		window->size.y = event->window.data2;
+		break;
+	case SDL_MOUSEMOTION:
+		window->mousepos.x = event->motion.x;
+		window->mousepos.y = event->motion.y;
+		window->mousevel.x = event->motion.xrel;
+		window->mousevel.y = event->motion.yrel;
+		break;
+	}
+
+	if (window->lock_mouse) SDL_WarpMouseInWindow(window->sdl_window, window->size.x / 2, window->size.y / 2);
+}
+f32 window_get_ratio(struct window *self) {
+	return (f32)self->size.x / (f32)self->size.y;
 }
 

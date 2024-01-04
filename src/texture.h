@@ -12,6 +12,7 @@ struct texinfo {
 };
 struct texinfo texinfo_load(const char *path);
 struct texinfo texinfo_init(u32 width, u32 height);
+void tex_bind(tex_t tex, u32 slot);
 
 #endif
 

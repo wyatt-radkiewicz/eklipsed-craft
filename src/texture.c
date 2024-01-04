@@ -2,24 +2,7 @@
 
 #include "texture.h"
 
-struct texinfo texinfo_init(u32 width, u32 height) {
-	struct texinfo texinfo = (struct texinfo){ .width = width, .height = height };
-
-	glGenTextures(1, &texinfo.tex);
-    glBindTexture(GL_TEXTURE_2D, texinfo.tex); 
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
-    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
-	
-	if (width && height) {
-		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texinfo.width, texinfo.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
-    	glGenerateMipmap(GL_TEXTURE_2D);
-	}
-	
-	return texinfo;
-}
-struct texinfo loadtexture(const char *path) {
+struct texinfo texinfo_load(const char *path) {
 	struct texinfo texinfo = texinfo_init(0, 0);
     stbi_set_flip_vertically_on_load(true);
 
@@ -37,5 +20,26 @@ struct texinfo loadtexture(const char *path) {
     stbi_image_free(data);
 
 	return texinfo;
+}
+struct texinfo texinfo_init(u32 width, u32 height) {
+	struct texinfo texinfo = (struct texinfo){ .width = width, .height = height };
+
+	glGenTextures(1, &texinfo.tex);
+    glBindTexture(GL_TEXTURE_2D, texinfo.tex); 
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_REPEAT);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_NEAREST_MIPMAP_LINEAR);
+    glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+	
+	if (width && height) {
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, texinfo.width, texinfo.height, 0, GL_RGBA, GL_UNSIGNED_BYTE, NULL);
+    	glGenerateMipmap(GL_TEXTURE_2D);
+	}
+	
+	return texinfo;
+}
+void tex_bind(tex_t tex, u32 slot) {
+	glActiveTexture(GL_TEXTURE0 + slot);
+	glBindTexture(GL_TEXTURE_2D, tex);
 }
 

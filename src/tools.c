@@ -87,7 +87,7 @@ void *_vector_reserve_exact(void *self, u32 elemsize, u32 capacity) {
 }
 void *_vector_push(void *self, u32 elemsize, const void *val) {
 	self = _vector_resize(self, elemsize, vector_len(self) + 1);
-	memcpy((u8 *)self + elemsize * vector_len(self) - 1, val, elemsize);
+	memcpy((u8 *)self + elemsize * (vector_len(self) - 1), val, elemsize);
 	return self;
 }
 void *_vector_pop(void *self, u32 elemsize) {
