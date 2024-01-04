@@ -21,7 +21,11 @@ int main(int argc, char **argv) {
 	quad_upload_vtxs(&quad_mesh);
 	quads = vector_push(quads, (struct quad_inst) {
 		.world = glms_mat4_identity(),
-		.texmat = glms_mat3_identity(),
+		.uv = (vec4s){ .x = 0.0f, .y = 0.0f, .z = 1.0f, .w = 1.0f},
+	});
+	quads = vector_push(quads, (struct quad_inst) {
+		.world = glms_translate(glms_mat4_identity(), (vec3s){ .x = 1.0f, .y = 1.0f, .z = -2.0f }),
+		.uv = (vec4s){ .x = 0.0f, .y = 0.0f, .z = 3.0f, .w = 2.0f},
 	});
 	mesh_upload_instances(&quad_mesh, quads, vector_len(quads) * sizeof(*quads));
 
@@ -30,6 +34,9 @@ int main(int argc, char **argv) {
 
 	shader_t shader = shader_load("data/shaders/basic.vs", "data/shaders/basic.fs", vtx_attrs_quad(), ibo_attrs_quad());
 	shader_set(shader, "utexture", 0);
+
+	glEnable(GL_DEPTH_TEST);
+	glEnable(GL_CULL_FACE);
 
 	f64 dt = 0.0;
 	while (!window.should_close) {
@@ -47,7 +54,7 @@ int main(int argc, char **argv) {
 			.y = sinf(camera.rot.x),
 			.z = -cos(camera.rot.y) * cosf(camera.rot.x),
 		};
-		const vec3s side = glms_vec3_cross(forward, (vec3s){ .x = 0.0f, .y = 1.0f, .z = 0.0f });
+		const vec3s side = glms_vec3_crossn(forward, (vec3s){ .x = 0.0f, .y = 1.0f, .z = 0.0f });
 		camera.pos = glms_vec3_add(
 			glms_vec3_add(camera.pos, glms_vec3_scale(forward, movement * 3.0f * dt)),
 			glms_vec3_scale(side, lateral_movement * 2.5f * dt)
@@ -55,7 +62,7 @@ int main(int argc, char **argv) {
 
 		glViewport(0, 0, window.size.x, window.size.y);
 		glClearColor(0.3f, 0.7f, 1.0f, 1.0f);
-		glClear(GL_COLOR_BUFFER_BIT);
+		glClear(GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT);
 		glUseProgram(shader);
 		camera_set_uniforms(&camera, window_get_ratio(&window), shader);
 		tex_bind(texinfo.tex, 0);

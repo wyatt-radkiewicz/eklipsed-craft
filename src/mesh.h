@@ -53,11 +53,11 @@ bool vtx_attr_is_end(const struct vtx_attr *attr);
 struct quad_vtx {
 	vec3s pos;
 	vec3s norm;
-	vec3s uv;
+	vec2s uv;
 };
 struct quad_inst {
 	mat4s world;
-	mat3s texmat;
+	vec4s uv;
 };
 
 const struct vtx_attr *vtx_attrs_quad(void);

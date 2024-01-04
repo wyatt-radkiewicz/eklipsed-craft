@@ -87,7 +87,7 @@ const struct vtx_attr *vtx_attrs_quad(void) {
 const struct vtx_attr *ibo_attrs_quad(void) {
 	static const struct vtx_attr attrs[] = {
 		GEN_VTX_ATTR(struct quad_inst, world, "iworld"),
-		GEN_VTX_ATTR(struct quad_inst, texmat, "itexmat"),
+		GEN_VTX_ATTR(struct quad_inst, uv, "iuv"),
 		VTX_ATTR_END
 	};
 	return attrs;
@@ -96,27 +96,27 @@ void quad_upload_vtxs(struct mesh *mesh) {
 	static const struct quad_vtx vtxs[] = {
 		// Top-left
 		{
-			.pos = (vec3s){  .x = -0.5f, .y = 0.5f, .z = 0.0f },
+			.pos =  (vec3s){ .x = -0.5f, .y = 0.5f, .z = 0.0f },
 			.norm = (vec3s){ .x = 0.0f,	 .y = 0.0f, .z = 1.0f },
-			.uv = (vec3s){   .x = 0.0f,  .y = 1.0f, .z = 0.0f },
+			.uv =   (vec2s){ .x = 0.0f,  .y = 1.0f },
 		},
 		// Top-right
 		{
-			.pos = (vec3s){  .x = 0.5f, .y = 0.5f, .z = 0.0f },
+			.pos =  (vec3s){ .x = 0.5f, .y = 0.5f, .z = 0.0f },
 			.norm = (vec3s){ .x = 0.0f, .y = 0.0f, .z = 1.0f },
-			.uv = (vec3s){   .x = 1.0f, .y = 1.0f, .z = 0.0f },
+			.uv =   (vec2s){ .x = 1.0f, .y = 1.0f },
 		},
 		// Bottom-left
 		{
-			.pos = (vec3s){  .x = -0.5f, .y = -0.5f, .z = 0.0f },
+			.pos =  (vec3s){ .x = -0.5f, .y = -0.5f, .z = 0.0f },
 			.norm = (vec3s){ .x = 0.0f,  .y = 0.0f, .z = 1.0f },
-			.uv = (vec3s){   .x = 0.0f,  .y = 0.0f, .z = 0.0f },
+			.uv =   (vec2s){ .x = 0.0f,  .y = 0.0f },
 		},
 		// Bottom-right
 		{
-			.pos = (vec3s){  .x = 0.5f, .y = -0.5f, .z = 0.0f },
+			.pos =  (vec3s){ .x = 0.5f, .y = -0.5f, .z = 0.0f },
 			.norm = (vec3s){ .x = 0.0f, .y = 0.0f, .z = 1.0f },
-			.uv = (vec3s){   .x = 1.0f, .y = 0.0f, .z = 0.0f },
+			.uv =   (vec2s){ .x = 1.0f, .y = 0.0f },
 		},
 	};
 	
