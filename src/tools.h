@@ -54,6 +54,7 @@ typedef intptr_t iptr;
 //
 // Small helper macros/functions
 //
+#define arrlen(arr) (sizeof(arr) / sizeof((arr)[0]))
 #define torad(deg) ((deg)/180.0f*M_PI)
 #define todeg(rad) ((rad)/M_PI*180.0f)
 #define min(a, b) ({ \

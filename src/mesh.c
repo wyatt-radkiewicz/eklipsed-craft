@@ -153,7 +153,7 @@ const struct vtx_attr *ibo_attrs_cube(void) {
 	return attrs;
 }
 void cube_upload_vtxs(struct mesh *mesh) {
-	static const struct cube_vtx vtxs[] = {
+	static struct cube_vtx vtxs[] = {
 		// PZ Top-left
 		{
 			.pos =  (vec3s){ .x = -0.5f, .y = 0.5f, .z = 0.5f },

@@ -43,11 +43,11 @@ int main(int argc, char **argv) {
 	});
 	cubes = vector_push(cubes, (struct cube_inst) {
 		.world = glms_translate(glms_mat4_identity(), (vec3s){ .x = -4.0f, .y = 0.0f, .z = 1.0f }),
-		.pz = (vec4s){ .x = 0.0f, .y = 0.0f, .z = 1.0f, .w = 1.0f, },
+		.pz = (vec4s){ .x = 0.0f, .y = 0.5f, .z = 1.0f, .w = 0.5f, },
 		.nz = (vec4s){ .x = 0.0f, .y = 0.0f, .z = 1.0f, .w = 1.0f, },
 		.py = (vec4s){ .x = 0.0f, .y = 0.0f, .z = 1.0f, .w = 1.0f, },
 		.ny = (vec4s){ .x = 0.0f, .y = 0.0f, .z = 1.0f, .w = 1.0f, },
-		.px = (vec4s){ .x = 0.0f, .y = 0.0f, .z = 2.0f, .w = 1.0f, },
+		.px = (vec4s){ .x = 0.0f, .y = 0.0f, .z = 1.0f, .w = 1.0f, },
 		.nx = (vec4s){ .x = 0.0f, .y = 0.0f, .z = 1.0f, .w = 1.0f, },
 	});
 	mesh_upload_instances(&cube_mesh, cubes, vector_len(cubes) * sizeof(*cubes));
@@ -58,7 +58,7 @@ int main(int argc, char **argv) {
 	shader_t shader = shader_load("data/shaders/basic.vs", "data/shaders/basic.fs", vtx_attrs_basic(), ibo_attrs_quad());
 	shader_set(shader, "utexture", 0);
 
-	shader_t cube_shader = shader_load("data/shaders/cube.vs", "data/shaders/basic.fs", vtx_attrs_cube(), ibo_attrs_quad());
+	shader_t cube_shader = shader_load("data/shaders/cube.vs", "data/shaders/basic.fs", vtx_attrs_cube(), ibo_attrs_cube());
 	shader_set(cube_shader, "utexture", 0);
 
 	glEnable(GL_DEPTH_TEST);
