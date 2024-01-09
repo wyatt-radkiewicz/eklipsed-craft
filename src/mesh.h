@@ -72,9 +72,6 @@ struct cube_vtx {
 };
 struct cube_inst {
 	mat4s world;
-	vec4s pz, nz;
-	vec4s py, ny;
-	vec4s px, nx;
 };
 
 const struct vtx_attr *vtx_attrs_cube(void);

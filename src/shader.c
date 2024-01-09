@@ -71,6 +71,16 @@ shader_t shader_load(const char *vs_path, const char *fs_path,
 	glDetachShader(shader, frag);
 	return shader;
 }
+void shader_log_validation(shader_t self) {
+	GLint status, maxlen;
+	glGetProgramiv(self, GL_VALIDATE_STATUS, &status);
+	if (status) return;
+	glGetProgramiv(self, GL_INFO_LOG_LENGTH, &maxlen);
+	char *str = malloc(maxlen);
+	glGetProgramInfoLog(self, maxlen, NULL, str);
+	printf("shader validation error: %s\n", str);
+	free(str);
+}
 void shader_seti(shader_t self, const char *var, i32 val) {
 	glUniform1i(glGetUniformLocation(self, var), val);
 }

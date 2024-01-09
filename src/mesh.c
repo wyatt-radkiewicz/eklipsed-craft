@@ -142,12 +142,6 @@ const struct vtx_attr *vtx_attrs_cube(void) {
 const struct vtx_attr *ibo_attrs_cube(void) {
 	static const struct vtx_attr attrs[] = {
 		GEN_VTX_ATTR(struct cube_inst, world, "iworld"),
-		GEN_VTX_ATTR(struct cube_inst, pz, "ipz"),
-		GEN_VTX_ATTR(struct cube_inst, nz, "inz"),
-		GEN_VTX_ATTR(struct cube_inst, py, "ipy"),
-		GEN_VTX_ATTR(struct cube_inst, ny, "iny"),
-		GEN_VTX_ATTR(struct cube_inst, px, "ipx"),
-		GEN_VTX_ATTR(struct cube_inst, nx, "inx"),
 		VTX_ATTR_END
 	};
 	return attrs;

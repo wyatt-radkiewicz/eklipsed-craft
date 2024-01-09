@@ -43,3 +43,40 @@ void tex_bind(tex_t tex, u32 slot) {
 	glBindTexture(GL_TEXTURE_2D, tex);
 }
 
+static GLenum _texbuf_get_internal_format(const struct texbuf *self) {
+	switch (self->format) {
+	case TEXBUF_U8: return GL_RGBA8UI;
+	case TEXBUF_U16: return GL_RGBA16UI;
+	case TEXBUF_I32: return GL_RGBA32I;
+	case TEXBUF_U32: return GL_RGBA32F;
+	case TEXBUF_F32: return GL_RGBA32F;
+	default: return -1;
+	}
+}
+struct texbuf texbuf_init(enum texbuf_format format) {
+	struct texbuf self = (struct texbuf){ .format = format, };
+
+	glGenBuffers(1, &self.buf);
+	glGenTextures(1, &self.tex);
+	return self;
+}
+void texbuf_deinit(struct texbuf *self) {
+	glDeleteBuffers(1, &self->buf);
+	glDeleteTextures(1, &self->tex);
+}
+void texbuf_buffer(struct texbuf *self, void *data, usize size) {
+	glBindBuffer(GL_TEXTURE_BUFFER, self->buf);
+	glBufferData(GL_TEXTURE_BUFFER, size, data, GL_STATIC_DRAW);
+	glBindBuffer(GL_TEXTURE_BUFFER, 0);
+}
+void texbuf_buffer_sub(struct texbuf *self, usize offset, void *data, usize size) {
+	glBindBuffer(GL_TEXTURE_BUFFER, self->buf);
+	glBufferSubData(GL_TEXTURE_BUFFER, offset, size, data);
+	glBindBuffer(GL_TEXTURE_BUFFER, 0);
+}
+void texbuf_use(struct texbuf *self, u32 slot) {
+	glActiveTexture(GL_TEXTURE0 + slot);
+	glBindTexture(GL_TEXTURE_BUFFER, self->tex);
+	glTexBuffer(GL_TEXTURE_BUFFER, _texbuf_get_internal_format(self), self->buf);
+}
+

@@ -12,6 +12,7 @@ typedef GLuint shader_t;
 
 shader_t shader_load(const char *vs_path, const char *fs_path,
 	const struct vtx_attr *vtx_attrs, const struct vtx_attr *ibo_attrs);
+void shader_log_validation(shader_t self);
 void shader_seti(shader_t self, const char *var, i32 val);
 void shader_setf(shader_t self, const char *var, f32 val);
 void shader_setv2(shader_t self, const char *var, vec2s val);

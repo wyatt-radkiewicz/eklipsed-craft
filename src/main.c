@@ -15,6 +15,22 @@ int main(int argc, char **argv) {
 	window_set_lock_mouse(&window, true);
 
 	struct texinfo texinfo = texinfo_load("minecraft/pack.png");
+	struct texbuf cube_uv_buf = texbuf_init(TEXBUF_F32);
+	vec4s *cube_uvs = vector_init(*cube_uvs);
+	cube_uvs = vector_push(cube_uvs, (vec4s){ .x = 0.0f, .y = 0.0f, .z = 3.0f, .w = 3.0f });
+	cube_uvs = vector_push(cube_uvs, (vec4s){ .x = 0.0f, .y = 0.0f, .z = 1.0f, .w = 1.0f });
+	cube_uvs = vector_push(cube_uvs, (vec4s){ .x = 0.0f, .y = 0.0f, .z = 1.0f, .w = 1.0f });
+	cube_uvs = vector_push(cube_uvs, (vec4s){ .x = 0.0f, .y = 0.0f, .z = 1.0f, .w = 1.0f });
+	cube_uvs = vector_push(cube_uvs, (vec4s){ .x = 0.0f, .y = 0.0f, .z = 1.0f, .w = 1.0f });
+	cube_uvs = vector_push(cube_uvs, (vec4s){ .x = 0.0f, .y = 0.0f, .z = 1.0f, .w = 1.0f });
+
+	cube_uvs = vector_push(cube_uvs, (vec4s){ .x = 0.0f, .y = 0.0f, .z = 1.0f, .w = 1.0f });
+	cube_uvs = vector_push(cube_uvs, (vec4s){ .x = 0.0f, .y = 0.0f, .z = 1.0f, .w = 1.0f });
+	cube_uvs = vector_push(cube_uvs, (vec4s){ .x = 0.0f, .y = 0.0f, .z = 1.0f, .w = 1.0f });
+	cube_uvs = vector_push(cube_uvs, (vec4s){ .x = 0.0f, .y = 0.0f, .z = 1.0f, .w = 1.0f });
+	cube_uvs = vector_push(cube_uvs, (vec4s){ .x = 0.0f, .y = 0.0f, .z = 1.0f, .w = 1.0f });
+	cube_uvs = vector_push(cube_uvs, (vec4s){ .x = 0.0f, .y = 0.0f, .z = 1.0f, .w = 1.0f });
+	texbuf_buffer(&cube_uv_buf, cube_uvs, vector_len(cube_uvs) * sizeof(*cube_uvs));
 
 	struct mesh quad_mesh = mesh_init(vtx_attrs_basic(), true, ibo_attrs_quad());
 	struct quad_inst *quads = vector_init(*quads);
@@ -30,25 +46,13 @@ int main(int argc, char **argv) {
 	mesh_upload_instances(&quad_mesh, quads, vector_len(quads) * sizeof(*quads));
 
 	struct mesh cube_mesh = mesh_init(vtx_attrs_cube(), true, ibo_attrs_cube());
-	struct cube_inst *cubes = vector_init(*cubes);
 	cube_upload_vtxs(&cube_mesh);
+	struct cube_inst *cubes = vector_init(*cubes);
 	cubes = vector_push(cubes, (struct cube_inst) {
 		.world = glms_rotate_z(glms_mat4_identity(), torad(45.0f)),
-		.pz = (vec4s){ .x = 0.0f, .y = 0.0f, .z = 1.0f, .w = 1.0f, },
-		.nz = (vec4s){ .x = 0.0f, .y = 0.0f, .z = 1.0f, .w = 1.0f, },
-		.py = (vec4s){ .x = 0.0f, .y = 0.0f, .z = 1.0f, .w = 1.0f, },
-		.ny = (vec4s){ .x = 0.0f, .y = 0.0f, .z = 1.0f, .w = 1.0f, },
-		.px = (vec4s){ .x = 0.0f, .y = 0.0f, .z = 1.0f, .w = 1.0f, },
-		.nx = (vec4s){ .x = 0.0f, .y = 0.0f, .z = 1.0f, .w = 1.0f, },
 	});
 	cubes = vector_push(cubes, (struct cube_inst) {
 		.world = glms_translate(glms_mat4_identity(), (vec3s){ .x = -4.0f, .y = 0.0f, .z = 1.0f }),
-		.pz = (vec4s){ .x = 0.0f, .y = 0.5f, .z = 1.0f, .w = 0.5f, },
-		.nz = (vec4s){ .x = 0.0f, .y = 0.0f, .z = 1.0f, .w = 1.0f, },
-		.py = (vec4s){ .x = 0.0f, .y = 0.0f, .z = 1.0f, .w = 1.0f, },
-		.ny = (vec4s){ .x = 0.0f, .y = 0.0f, .z = 1.0f, .w = 1.0f, },
-		.px = (vec4s){ .x = 0.0f, .y = 0.0f, .z = 1.0f, .w = 1.0f, },
-		.nx = (vec4s){ .x = 0.0f, .y = 0.0f, .z = 1.0f, .w = 1.0f, },
 	});
 	mesh_upload_instances(&cube_mesh, cubes, vector_len(cubes) * sizeof(*cubes));
 
@@ -58,8 +62,9 @@ int main(int argc, char **argv) {
 	shader_t shader = shader_load("data/shaders/basic.vs", "data/shaders/basic.fs", vtx_attrs_basic(), ibo_attrs_quad());
 	shader_set(shader, "utexture", 0);
 
-	shader_t cube_shader = shader_load("data/shaders/cube.vs", "data/shaders/basic.fs", vtx_attrs_cube(), ibo_attrs_cube());
+	shader_t cube_shader = shader_load("data/shaders/cube.vs", "data/shaders/cube.fs", vtx_attrs_cube(), ibo_attrs_cube());
 	shader_set(cube_shader, "utexture", 0);
+	shader_set(cube_shader, "uuvs", 1);
 
 	glEnable(GL_DEPTH_TEST);
 	glEnable(GL_CULL_FACE);
@@ -99,6 +104,7 @@ int main(int argc, char **argv) {
 		glUseProgram(cube_shader);
 		camera_set_uniforms(&camera, window_get_ratio(&window), cube_shader);
 		tex_bind(texinfo.tex, 0);
+		texbuf_use(&cube_uv_buf, 1);
 		glBindVertexArray(cube_mesh.vao);
 		glDrawElementsInstanced(GL_TRIANGLES, 6*6, GL_UNSIGNED_INT, NULL, vector_len(cubes));
 
@@ -107,12 +113,17 @@ int main(int argc, char **argv) {
 		dt = (f64)(frame_end - frame_start) / (f64)CLOCKS_PER_SEC;
 	}
 
-	vector_deinit(quads);
-	vector_deinit(cubes);
-	mesh_deinit(&quad_mesh);
+	vector_deinit(cube_uvs);
+	texbuf_deinit(&cube_uv_buf);
 	mesh_deinit(&cube_mesh);
-	glDeleteTextures(1, &texinfo.tex);
+	vector_deinit(cubes);
+	glDeleteProgram(cube_shader);
+
+	vector_deinit(quads);
+	mesh_deinit(&quad_mesh);
 	glDeleteProgram(shader);
+
+	glDeleteTextures(1, &texinfo.tex);
 ret:
 	window_deinit(&window);
 	tools_deinit();
