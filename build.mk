@@ -16,7 +16,7 @@ CC        ?= gcc
 
 # Flags
 DEPS_CFLAGS  := $(foreach dep,$(DEPS),$(shell pkg-config --cflags $(dep)))
-DEPS_LDFLAGS := $(foreach dep,$(DEPS_LINK),$(shell pkg-config --libs $(dep)))
+DEPS_LDFLAGS := $(foreach dep,$(DEPS_LINK),$(shell pkg-config --libs $(dep))) -lvulkan
 CFLAGS       := -I$(SRC_DIR) -I$(EXT_DIR)/include $(CFLAGS) $(DEPS_CFLAGS)
 LDFLAGS      := $(LDFLAGS) $(DEPS_LDFLAGS)
 
