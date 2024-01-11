@@ -19,6 +19,9 @@ struct window {
 	window_event_handler_t *handlers;
 
 	VkInstance vk_instance;
+#ifdef DEBUG
+	VkDebugUtilsMessengerEXT vk_dbgmsgr;
+#endif
 };
 
 bool window_init(struct window *self, const char *title, ivec2s size);

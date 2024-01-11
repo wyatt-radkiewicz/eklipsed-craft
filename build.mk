@@ -22,7 +22,7 @@ LDFLAGS      := $(LDFLAGS) $(DEPS_LDFLAGS)
 
 # Build Modes
 ifeq ($(TARGET),dbg)
-CFLAGS += -g -O0 -Wall -std=gnu2x
+CFLAGS += -g -O0 -Wall -std=gnu2x -DDEBUG
 endif
 ifeq ($(TARGET),rel)
 CFLAGS += -O2 -Wall -std=gnu2x

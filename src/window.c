@@ -1,5 +1,6 @@
 #include "tools.h"
 #include "window.h"
+#include "vulkan_util.h"
 
 static bool _sdl2_inited = false;
 static usize _num_windows = 0;
@@ -34,12 +35,34 @@ bool window_init(struct window *self, const char *title, ivec2s size) {
 		return false;
 	}
 
+	if (!vk_instance_init(
+		&self->vk_instance,
+#ifdef DEBUG
+		&self->vk_dbgmsgr,
+#else
+		NULL,
+#endif
+		self->sdl_window
+	)) {
+		printf("Couldn't init vulkan\n");
+		return false;
+	}
+
 	_num_windows++;
 	self->handlers = vector_push(self->handlers, window_handle_event);
 	
 	return true;
 }
 void window_deinit(struct window *self) {
+	vk_instance_deinit(
+		self->vk_instance,
+#ifdef DEBUG
+		&self->vk_dbgmsgr
+#else
+		NULL
+#endif
+	);
+
 	SDL_DestroyWindow(self->sdl_window);
 	vector_deinit(self->handlers);
 	*self = (struct window){0};
