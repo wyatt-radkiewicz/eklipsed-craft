@@ -38,6 +38,7 @@ bool vk_instance_init(VkInstance *self, VkDebugUtilsMessengerEXT *dbgmsgr, SDL_W
 		SDL_Vulkan_GetInstanceExtensions(sdl_window, &nexts, vnames);
 #ifdef __APPLE__
 		vnames = vector_push(vnames, VK_KHR_PORTABILITY_ENUMERATION_EXTENSION_NAME);
+		vnames = vector_push(vnames, "VK_KHR_get_physical_device_properties2");
 #endif
 #ifdef DEBUG
 		vnames = vector_push(vnames, VK_EXT_DEBUG_UTILS_EXTENSION_NAME);
@@ -148,5 +149,87 @@ void vk_instance_deinit(VkInstance self, VkDebugUtilsMessengerEXT *dbgmsgr) {
 #endif
 
 	vkDestroyInstance(self, NULL);
+}
+
+static bool is_dev_useable(VkPhysicalDevice dev) {
+	return vk_get_queue_families(dev, NULL);
+}
+
+VkPhysicalDevice vk_get_physdev(VkInstance inst) {
+	u32 ndevs;
+	vkEnumeratePhysicalDevices(inst, &ndevs, NULL);
+	VkPhysicalDevice *devs = malloc(sizeof(*devs) * ndevs);
+	vkEnumeratePhysicalDevices(inst, &ndevs, devs);
+
+	VkPhysicalDevice dev = VK_NULL_HANDLE;
+	for (u32 i = 0; i < ndevs; i++) {
+		if (is_dev_useable(devs[i])) {
+			dev = devs[i];
+			break;
+		}
+	}
+
+	free(devs);
+	return dev;
+}
+bool vk_get_queue_families(VkPhysicalDevice dev, struct vk_queue_families *qf) {
+	u32 nfams;
+	vkGetPhysicalDeviceQueueFamilyProperties(dev, &nfams, NULL);
+	VkQueueFamilyProperties *fams = malloc(sizeof(*fams) * nfams);
+	vkGetPhysicalDeviceQueueFamilyProperties(dev, &nfams, fams);
+
+	bool gfx_found = false;
+	for (u32 i = 0; i < nfams; i++) {
+		if (fams[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
+			gfx_found = true;
+			if (qf) qf->gfx = i;
+		}
+	}
+
+	free(fams);
+
+	return gfx_found;
+}
+bool vk_dev_init(VkDevice *dev, VkPhysicalDevice phys, const struct vk_queue_families *qf) {
+	VkDeviceCreateInfo cinfo = (VkDeviceCreateInfo){
+		.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
+		.pQueueCreateInfos = (VkDeviceQueueCreateInfo[]){
+			(VkDeviceQueueCreateInfo){
+				.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+				.queueFamilyIndex = qf->gfx,
+				.queueCount = 1,
+				.pQueuePriorities = (float[]){ 1.0 },
+			}
+		},
+		.queueCreateInfoCount = 1,
+#ifdef DEBUG
+		.enabledLayerCount = 1,
+		.ppEnabledLayerNames = (const char *[]){
+			"VK_LAYER_KHRONOS_validation"
+		},
+#else
+		.enabledLayerCount = 0,
+#endif
+		.ppEnabledExtensionNames = (const char *[]){
+#ifdef __APPLE__
+			"VK_KHR_portability_subset",
+#endif
+		},
+#ifdef __APPLE__
+		.enabledExtensionCount = 1,
+#else
+		.enabledExtensionCount = 0,
+#endif
+		.pEnabledFeatures = &(VkPhysicalDeviceFeatures){
+			
+		},
+	};
+
+	if (vkCreateDevice(phys, &cinfo, NULL, dev) != VK_SUCCESS) {
+		printf("Couldn't create vulkan logical device!\n");
+		return false;
+	}
+
+	return true;
 }
 

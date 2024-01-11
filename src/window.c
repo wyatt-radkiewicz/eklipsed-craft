@@ -47,6 +47,19 @@ bool window_init(struct window *self, const char *title, ivec2s size) {
 		printf("Couldn't init vulkan\n");
 		return false;
 	}
+	if ((self->vk_phys = vk_get_physdev(self->vk_instance)) == VK_NULL_HANDLE) {
+		printf("Couldn't find a physical device\n");
+		return false;
+	}
+	if (!vk_get_queue_families(self->vk_phys, &self->vk_qf)) {
+		printf("Couldn't find needed vulkan queue families!\n");
+		return false;
+	}
+	if (!vk_dev_init(&self->vk_dev, self->vk_phys, &self->vk_qf)) {
+		printf("Couldn't create logical vulkan device!\n");
+		return false;
+	}
+	vkGetDeviceQueue(self->vk_dev, self->vk_qf.gfx, 0, &self->vk_gfxq);
 
 	_num_windows++;
 	self->handlers = vector_push(self->handlers, window_handle_event);
@@ -54,6 +67,8 @@ bool window_init(struct window *self, const char *title, ivec2s size) {
 	return true;
 }
 void window_deinit(struct window *self) {
+	vkDestroyDevice(self->vk_dev, NULL);
+
 	vk_instance_deinit(
 		self->vk_instance,
 #ifdef DEBUG

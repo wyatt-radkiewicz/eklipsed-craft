@@ -5,9 +5,9 @@
 
 #include <cglm/struct.h>
 #include <SDL.h>
-#include <vulkan/vulkan.h>
 
 #include "tools.h"
+#include "vulkan_util.h"
 
 struct window;
 typedef void(*window_event_handler_t)(struct window *window, const SDL_Event *event);
@@ -22,6 +22,10 @@ struct window {
 #ifdef DEBUG
 	VkDebugUtilsMessengerEXT vk_dbgmsgr;
 #endif
+	VkPhysicalDevice vk_phys;
+	VkDevice vk_dev;
+	struct vk_queue_families vk_qf;
+	VkQueue vk_gfxq;
 };
 
 bool window_init(struct window *self, const char *title, ivec2s size);
