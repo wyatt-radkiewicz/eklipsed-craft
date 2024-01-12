@@ -74,7 +74,7 @@ bool vk_instance_init(VkInstance *self, VkDebugUtilsMessengerEXT *dbgmsgr, SDL_W
 #endif
 
 #ifdef DEBUG
-	VkDebugUtilsMessengerCreateInfoEXT dbg_cinfo = (VkDebugUtilsMessengerCreateInfoEXT){
+	const VkDebugUtilsMessengerCreateInfoEXT dbg_cinfo = (VkDebugUtilsMessengerCreateInfoEXT){
 		.sType = VK_STRUCTURE_TYPE_DEBUG_UTILS_MESSENGER_CREATE_INFO_EXT,
 		.messageSeverity = VK_DEBUG_UTILS_MESSAGE_SEVERITY_VERBOSE_BIT_EXT
 			| VK_DEBUG_UTILS_MESSAGE_SEVERITY_WARNING_BIT_EXT
@@ -86,7 +86,7 @@ bool vk_instance_init(VkInstance *self, VkDebugUtilsMessengerEXT *dbgmsgr, SDL_W
 	};
 #endif
 
-	VkApplicationInfo appinfo = (VkApplicationInfo){
+	const VkApplicationInfo appinfo = (VkApplicationInfo){
 		.sType = VK_STRUCTURE_TYPE_APPLICATION_INFO,
 		.pApplicationName = "ecraft",
 		.applicationVersion = VK_MAKE_VERSION(0, 1, 0),
@@ -95,7 +95,7 @@ bool vk_instance_init(VkInstance *self, VkDebugUtilsMessengerEXT *dbgmsgr, SDL_W
 		.apiVersion = VK_API_VERSION_1_0,
 	};
 
-	VkInstanceCreateInfo cinfo = (VkInstanceCreateInfo){
+	const VkInstanceCreateInfo cinfo = (VkInstanceCreateInfo){
 		.sType = VK_STRUCTURE_TYPE_INSTANCE_CREATE_INFO,
 		.pApplicationInfo = &appinfo,
 		.enabledExtensionCount = vector_len(vnames),
@@ -151,11 +151,33 @@ void vk_instance_deinit(VkInstance self, VkDebugUtilsMessengerEXT *dbgmsgr) {
 	vkDestroyInstance(self, NULL);
 }
 
-static bool is_dev_useable(VkPhysicalDevice dev) {
-	return vk_get_queue_families(dev, NULL);
+static bool is_dev_useable(VkPhysicalDevice dev, VkSurfaceKHR window_surf) {
+	bool has_queues = vk_get_queue_families(dev, NULL, window_surf);
+	bool has_swapchain_support = false;
+
+	u32 nexts;
+	vkEnumerateDeviceExtensionProperties(dev, NULL, &nexts, NULL);
+	VkExtensionProperties *exts = malloc(sizeof(*exts) * nexts);
+	vkEnumerateDeviceExtensionProperties(dev, NULL, &nexts, exts);
+
+	for (u32 i = 0; i < nexts; i++) {
+		has_swapchain_support |= strcmp(exts[i].extensionName, VK_KHR_SWAPCHAIN_EXTENSION_NAME) == 0;
+	}
+
+	free(exts);
+
+	if (!has_swapchain_support) return false;
+
+	u32 len;
+	vkGetPhysicalDeviceSurfaceFormatsKHR(dev, window_surf, &len, NULL);
+	if (!len) return false;
+	vkGetPhysicalDeviceSurfacePresentModesKHR(dev, window_surf, &len, NULL);
+	if (!len) return false;
+
+	return has_queues;
 }
 
-VkPhysicalDevice vk_get_physdev(VkInstance inst) {
+VkPhysicalDevice vk_get_physdev(VkInstance inst, VkSurfaceKHR window_surf) {
 	u32 ndevs;
 	vkEnumeratePhysicalDevices(inst, &ndevs, NULL);
 	VkPhysicalDevice *devs = malloc(sizeof(*devs) * ndevs);
@@ -163,7 +185,7 @@ VkPhysicalDevice vk_get_physdev(VkInstance inst) {
 
 	VkPhysicalDevice dev = VK_NULL_HANDLE;
 	for (u32 i = 0; i < ndevs; i++) {
-		if (is_dev_useable(devs[i])) {
+		if (is_dev_useable(devs[i], window_surf)) {
 			dev = devs[i];
 			break;
 		}
@@ -172,26 +194,34 @@ VkPhysicalDevice vk_get_physdev(VkInstance inst) {
 	free(devs);
 	return dev;
 }
-bool vk_get_queue_families(VkPhysicalDevice dev, struct vk_queue_families *qf) {
+bool vk_get_queue_families(VkPhysicalDevice dev, struct vk_queue_families *qf, VkSurfaceKHR present_surf) {
 	u32 nfams;
 	vkGetPhysicalDeviceQueueFamilyProperties(dev, &nfams, NULL);
 	VkQueueFamilyProperties *fams = malloc(sizeof(*fams) * nfams);
 	vkGetPhysicalDeviceQueueFamilyProperties(dev, &nfams, fams);
 
-	bool gfx_found = false;
+	bool gfx_found = false, present_found = false;
 	for (u32 i = 0; i < nfams; i++) {
 		if (fams[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
 			gfx_found = true;
 			if (qf) qf->gfx = i;
 		}
+
+		if (present_surf != VK_NULL_HANDLE) continue;
+		VkBool32 supports_surf;
+		vkGetPhysicalDeviceSurfaceSupportKHR(dev, i, present_surf, &supports_surf);
+		if (supports_surf) {
+			present_found = true;
+			if (qf) qf->present = i;
+		}
 	}
 
 	free(fams);
 
-	return gfx_found;
+	return gfx_found || present_found;
 }
 bool vk_dev_init(VkDevice *dev, VkPhysicalDevice phys, const struct vk_queue_families *qf) {
-	VkDeviceCreateInfo cinfo = (VkDeviceCreateInfo){
+	const VkDeviceCreateInfo cinfo = (VkDeviceCreateInfo){
 		.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
 		.pQueueCreateInfos = (VkDeviceQueueCreateInfo[]){
 			(VkDeviceQueueCreateInfo){
@@ -199,9 +229,15 @@ bool vk_dev_init(VkDevice *dev, VkPhysicalDevice phys, const struct vk_queue_fam
 				.queueFamilyIndex = qf->gfx,
 				.queueCount = 1,
 				.pQueuePriorities = (float[]){ 1.0 },
+			},
+			(VkDeviceQueueCreateInfo){
+				.sType = VK_STRUCTURE_TYPE_DEVICE_QUEUE_CREATE_INFO,
+				.queueFamilyIndex = qf->present,
+				.queueCount = 1,
+				.pQueuePriorities = (float[]){ 1.0 },
 			}
 		},
-		.queueCreateInfoCount = 1,
+		.queueCreateInfoCount = 2,
 #ifdef DEBUG
 		.enabledLayerCount = 1,
 		.ppEnabledLayerNames = (const char *[]){
@@ -211,14 +247,15 @@ bool vk_dev_init(VkDevice *dev, VkPhysicalDevice phys, const struct vk_queue_fam
 		.enabledLayerCount = 0,
 #endif
 		.ppEnabledExtensionNames = (const char *[]){
+			VK_KHR_SWAPCHAIN_EXTENSION_NAME,
 #ifdef __APPLE__
 			"VK_KHR_portability_subset",
 #endif
 		},
 #ifdef __APPLE__
-		.enabledExtensionCount = 1,
+		.enabledExtensionCount = 2,
 #else
-		.enabledExtensionCount = 0,
+		.enabledExtensionCount = 1,
 #endif
 		.pEnabledFeatures = &(VkPhysicalDeviceFeatures){
 			
@@ -231,5 +268,119 @@ bool vk_dev_init(VkDevice *dev, VkPhysicalDevice phys, const struct vk_queue_fam
 	}
 
 	return true;
+}
+
+bool vk_swapchain_init(VkDevice dev, VkPhysicalDevice phys, SDL_Window *target_window, const struct vk_queue_families *qf, VkSurfaceKHR window_surf, struct vk_swapchain_data *data) {
+	bool ret = false;
+
+	// Get the details of the physical device's swapchain support
+	u32 nformats;
+	vkGetPhysicalDeviceSurfaceFormatsKHR(phys, window_surf, &nformats, NULL);
+	VkSurfaceFormatKHR *formats = malloc(sizeof(*formats) * nformats);
+	vkGetPhysicalDeviceSurfaceFormatsKHR(phys, window_surf, &nformats, formats);
+
+	u32 nmodes;
+	vkGetPhysicalDeviceSurfacePresentModesKHR(phys, window_surf, &nmodes, NULL);
+	VkPresentModeKHR *modes = malloc(sizeof(*modes) * nmodes);
+	vkGetPhysicalDeviceSurfacePresentModesKHR(phys, window_surf, &nmodes, modes);
+
+	VkSurfaceCapabilitiesKHR caps;
+	vkGetPhysicalDeviceSurfaceCapabilitiesKHR(phys, window_surf, &caps);
+
+	// Choose best formats and modes
+	if (!nformats || !nmodes) goto cleanup;
+	VkSurfaceFormatKHR chosen_format = formats[0];
+	for (u32 i = 0; i < nformats; i++) {
+		if (formats[i].colorSpace != VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) continue;
+		if (formats[i].format == VK_FORMAT_R8G8B8A8_SRGB) chosen_format = formats[i];
+	}
+	VkPresentModeKHR chosen_mode = modes[0];
+	for (u32 i = 0; i < nmodes; i++) {
+		if (modes[i] == VK_PRESENT_MODE_MAILBOX_KHR) chosen_mode = modes[i];
+	}
+	VkExtent2D size;
+	if (caps.currentExtent.width == (u32)-1 || caps.currentExtent.height == (u32)-1) {
+		size = caps.currentExtent;
+	} else {
+		int x, y;
+		SDL_GetWindowSizeInPixels(target_window, &x, &y);
+		size = (VkExtent2D){
+			.width = clamp(x, caps.minImageExtent.width, caps.maxImageExtent.width),
+			.height = clamp(y, caps.minImageExtent.height, caps.maxImageExtent.height),
+		};
+	}
+	u32 nimgs = caps.maxImageCount == 0 ? caps.minImageCount + 1 : min(caps.minImageCount + 1, caps.maxImageCount);
+
+	// Use those to create a swapchain
+	const VkSwapchainCreateInfoKHR cinfo = (VkSwapchainCreateInfoKHR){
+		.sType = VK_STRUCTURE_TYPE_SWAPCHAIN_CREATE_INFO_KHR,
+		.minImageCount = nimgs,
+		.imageFormat = chosen_format.format,
+		.imageColorSpace = chosen_format.colorSpace,
+		.imageExtent = size,
+		.imageArrayLayers = 1,
+		.imageUsage = VK_IMAGE_USAGE_COLOR_ATTACHMENT_BIT,
+		
+		.imageSharingMode = qf->gfx == qf->present ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT,
+		.queueFamilyIndexCount = qf->gfx == qf->present ? 0 : 2,
+		.pQueueFamilyIndices = qf->gfx == qf->present ? NULL : (u32[]){ qf->gfx, qf->present },
+
+		.preTransform = caps.currentTransform,
+		.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
+		.presentMode = chosen_mode,
+		.clipped = VK_TRUE,
+		.surface = window_surf,
+		.oldSwapchain = VK_NULL_HANDLE,
+	};
+
+	if (vkCreateSwapchainKHR(dev, &cinfo, NULL, &data->sc) != VK_SUCCESS) {
+		printf("Couldn't create the swapchain!\n");
+		goto cleanup;
+	}
+
+	data->size = size;
+	data->fmt = chosen_format.format;
+	data->vimgs = vector_init(*data->vimgs);
+	vkGetSwapchainImagesKHR(dev, data->sc, &nimgs, NULL);
+	data->vimgs = vector_resize(data->vimgs, nimgs);
+	vkGetSwapchainImagesKHR(dev, data->sc, &nimgs, data->vimgs);
+
+	data->vviews = vector_init(*data->vviews);
+	data->vviews = vector_resize(data->vviews, vector_len(data->vimgs));
+	for (u32 i = 0; i < vector_len(data->vviews); i++) {
+		const VkImageViewCreateInfo cinfo = (VkImageViewCreateInfo){
+			.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
+			.image = data->vimgs[i],
+			.viewType = VK_IMAGE_VIEW_TYPE_2D,
+			.format = data->fmt,
+			.components.r = VK_COMPONENT_SWIZZLE_IDENTITY,
+			.components.g = VK_COMPONENT_SWIZZLE_IDENTITY,
+			.components.b = VK_COMPONENT_SWIZZLE_IDENTITY,
+			.components.a = VK_COMPONENT_SWIZZLE_IDENTITY,
+			.subresourceRange.aspectMask = VK_IMAGE_ASPECT_COLOR_BIT,
+			.subresourceRange.baseMipLevel = 0,
+			.subresourceRange.baseArrayLayer = 0,
+			.subresourceRange.layerCount = 1,
+			.subresourceRange.levelCount = 1,
+		};
+		if (vkCreateImageView(dev, &cinfo, NULL, &data->vviews[i])) {
+			printf("Couldn't create a view into the swap chain images!\n");
+			goto cleanup;
+		}
+	}
+
+	ret = true;
+cleanup:
+	free(formats);
+	free(modes);
+	return ret;
+}
+void vk_swapchain_deinit(struct vk_swapchain_data *self, VkDevice dev) {
+	for (u32 i = 0; i < vector_len(self->vviews); i++) {
+		vkDestroyImageView(dev, self->vviews[i], NULL);
+	}
+	vector_deinit(self->vimgs);
+	vector_deinit(self->vviews);
+	vkDestroySwapchainKHR(dev, self->sc, NULL);
 }
 

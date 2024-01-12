@@ -47,11 +47,15 @@ bool window_init(struct window *self, const char *title, ivec2s size) {
 		printf("Couldn't init vulkan\n");
 		return false;
 	}
-	if ((self->vk_phys = vk_get_physdev(self->vk_instance)) == VK_NULL_HANDLE) {
+	if (!SDL_Vulkan_CreateSurface(self->sdl_window, self->vk_instance, &self->vk_window_surf)) {
+		printf("Couldn't create the vulkan surface for the window!\n");
+		return false;
+	}
+	if ((self->vk_phys = vk_get_physdev(self->vk_instance, self->vk_window_surf)) == VK_NULL_HANDLE) {
 		printf("Couldn't find a physical device\n");
 		return false;
 	}
-	if (!vk_get_queue_families(self->vk_phys, &self->vk_qf)) {
+	if (!vk_get_queue_families(self->vk_phys, &self->vk_qf, self->vk_window_surf)) {
 		printf("Couldn't find needed vulkan queue families!\n");
 		return false;
 	}
@@ -60,6 +64,11 @@ bool window_init(struct window *self, const char *title, ivec2s size) {
 		return false;
 	}
 	vkGetDeviceQueue(self->vk_dev, self->vk_qf.gfx, 0, &self->vk_gfxq);
+	vkGetDeviceQueue(self->vk_dev, self->vk_qf.present, 0, &self->vk_presentq);
+	if (!vk_swapchain_init(self->vk_dev, self->vk_phys, self->sdl_window, &self->vk_qf, self->vk_window_surf, &self->vk_scdata)) {
+		printf("Couldn't create the vulkan swapchain!\n");
+		return false;
+	}
 
 	_num_windows++;
 	self->handlers = vector_push(self->handlers, window_handle_event);
@@ -67,6 +76,8 @@ bool window_init(struct window *self, const char *title, ivec2s size) {
 	return true;
 }
 void window_deinit(struct window *self) {
+	vk_swapchain_deinit(&self->vk_scdata, self->vk_dev);
+	vkDestroySurfaceKHR(self->vk_instance, self->vk_window_surf, NULL);
 	vkDestroyDevice(self->vk_dev, NULL);
 
 	vk_instance_deinit(

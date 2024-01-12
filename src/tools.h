@@ -60,18 +60,18 @@ typedef intptr_t iptr;
 #define min(a, b) ({ \
 	typeof(a) _a = (a); \
 	typeof(b) _b = (b); \
-	return _a < _b ? _a : _b; \
+	_a < _b ? _a : _b; \
 })
 #define max(a, b) ({ \
 	typeof(a) _a = (a); \
 	typeof(b) _b = (b); \
-	return _a > _b ? _a : _b; \
+	_a > _b ? _a : _b; \
 })
 #define clamp(a, mn, mx) ({ \
 	typeof(a) _a = (a); \
 	typeof(mn) _mn = (mn); \
 	typeof(mx) _mx = (mx); \
-	min(max(a, mn), mx); \
+	min(max(_a, _mn), _mx); \
 })
 #define setbit(x, i) ((x) | (1 << (i)))
 #define clrbit(x, i) ((x) & ~(1 << (i)))

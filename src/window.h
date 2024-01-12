@@ -26,6 +26,9 @@ struct window {
 	VkDevice vk_dev;
 	struct vk_queue_families vk_qf;
 	VkQueue vk_gfxq;
+	VkQueue vk_presentq;
+	VkSurfaceKHR vk_window_surf;
+	struct vk_swapchain_data vk_scdata;
 };
 
 bool window_init(struct window *self, const char *title, ivec2s size);
