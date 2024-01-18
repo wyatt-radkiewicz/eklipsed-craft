@@ -103,6 +103,7 @@ typedef intptr_t iptr;
 void tools_init(void);
 void tools_deinit(void);
 char *loadfile(const char *path);
+usize loadfileb(const char *path, u8 **bufptr);
 usize fsize(FILE *file);
 const char *tmp_snprintf(const char *restrict format, ...);
 

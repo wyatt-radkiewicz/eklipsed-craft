@@ -13,24 +13,31 @@ DEPS_LINK := sdl2 sdl2_mixer
 SRCS      := $(shell find . -name "*.c" | awk '{print substr($$1,3)}')
 OBJS      = $(addprefix $(BUILD_DIR)/,$(patsubst %.c,%.o,$(SRCS)))
 CC        ?= gcc
+SHADER_DIR	:= shaders
+SHADER_SRCS	:= $(shell find $(SHADER_DIR) -name "*.vert") $(shell find $(SHADER_DIR) -name "*.frag")
+SHADER_SPRV	:= $(addsuffix .spv,$(SHADER_SRCS))
+SHADER_CC ?= glslc
 
 # Flags
 DEPS_CFLAGS  := $(foreach dep,$(DEPS),$(shell pkg-config --cflags $(dep)))
 DEPS_LDFLAGS := $(foreach dep,$(DEPS_LINK),$(shell pkg-config --libs $(dep))) -lvulkan
 CFLAGS       := -I$(SRC_DIR) -I$(EXT_DIR)/include $(CFLAGS) $(DEPS_CFLAGS)
 LDFLAGS      := $(LDFLAGS) $(DEPS_LDFLAGS)
+SHADER_FLAGS := -x glsl -Werror --target-env=vulkan
 
 # Build Modes
 ifeq ($(TARGET),dbg)
 CFLAGS += -g -O0 -Wall -std=gnu2x -DDEBUG
+SHADER_FLAGS += -O0 -g
 endif
 ifeq ($(TARGET),rel)
 CFLAGS += -O2 -Wall -std=gnu2x
+SHADER_FLAGS += -O
 endif
 
 # Linking
-$(PROG): $(OBJS)
-	$(CC) $(LDFLAGS) -o $@ $^
+$(PROG): $(OBJS) $(SHADER_SPRV)
+	$(CC) $(LDFLAGS) -o $@ $(OBJS)
 run: $(PROG)
 	$(PROG)
 
@@ -46,8 +53,20 @@ endef
 
 $(foreach src,$(SRCS),$(eval $(call COMPILE,$(src),$(shell $(CC) $(CFLAGS) -M $(src) | tr -d '\n' | tr '\\' ' '))))
 
+# Compiling Shaders
+# This variable should be used as a macro which takes in
+#   $(1) the source file
+define COMPILE_SHADER
+$$(addsuffix .spv,$(1)): $(1)
+	mkdir -p $$(dir $$@)
+	$(SHADER_CC) $(SHADER_FLAGS) -o $$@ $$^
+endef
+
+$(foreach src,$(SHADER_SRCS),$(eval $(call COMPILE_SHADER,$(src))))
+
 # Clean up
 .PHONY: clean
 clean:
 	rm -rf build_rel/ build_dbg/
+	rm -rf $(shell find $(SHADER_DIR) -name "*.spv")
 

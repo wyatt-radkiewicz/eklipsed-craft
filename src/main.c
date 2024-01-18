@@ -1,13 +1,35 @@
 #include "camera.h"
 #include "tools.h"
 #include "window.h"
+#include "vulkan_util.h"
 
 int main(int argc, char **argv) {
 	struct window window;
 
+	VkPipeline pipeline = VK_NULL_HANDLE;
+	VkPipelineLayout layout = VK_NULL_HANDLE;
+	VkRenderPass rpass = VK_NULL_HANDLE;
+
 	tools_init();
 	if (!window_init(&window, "Eklipsed craft", (ivec2s){ .x = 800, .y = 600 })) goto ret;
 	//window_set_lock_mouse(&window, true);
+	
+	if (!vk_generate_pipeline(
+		window.vk_dev,
+		&(struct vk_gfx_pipeline_cinfo){
+			.scdata = &window.vk_scdata,
+			.cull_faces = false,
+			.depth_test = false,
+			.clamp_depth = false,
+			.multisamples = 1,
+			.blend_state = BLEND_ALPHA,
+		},
+		&pipeline,
+		&layout,
+		&rpass,
+		"shaders/test.vert.spv",
+		"shaders/test.frag.spv"
+	)) goto ret;
 
 	struct camera camera = camera_init();
 	camera.pos.z = 3;
@@ -39,6 +61,10 @@ int main(int argc, char **argv) {
 	}
 
 ret:
+	vkDestroyPipeline(window.vk_dev, pipeline, NULL);
+	vkDestroyPipelineLayout(window.vk_dev, layout, NULL);
+	vkDestroyRenderPass(window.vk_dev, rpass, NULL);
+
 	window_deinit(&window);
 	tools_deinit();
 	return 0;

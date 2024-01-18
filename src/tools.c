@@ -25,6 +25,17 @@ char *loadfile(const char *path) {
 	fclose(file);
 	return str;
 }
+usize loadfileb(const char *path, u8 **bufptr) {
+	FILE *file = fopen(path, "rb");
+	if (!file) return 0;
+
+	usize size = fsize(file);
+	*bufptr = malloc(size);
+	fread(*bufptr, size, 1, file);
+	
+	fclose(file);
+	return size;
+}
 size_t fsize(FILE *file) {
 	long pos = ftell(file);
 	fseek(file, 0, SEEK_END);

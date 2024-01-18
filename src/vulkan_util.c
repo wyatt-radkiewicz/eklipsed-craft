@@ -384,3 +384,201 @@ void vk_swapchain_deinit(struct vk_swapchain_data *self, VkDevice dev) {
 	vkDestroySwapchainKHR(dev, self->sc, NULL);
 }
 
+bool vk_shadermodule_init(VkDevice dev, const char *binfile, VkShaderModule *shader) {
+	u8 *data;
+	const usize datalen = loadfileb(binfile, &data);
+	if (!datalen) return false;
+
+	VkShaderModuleCreateInfo cinfo = (VkShaderModuleCreateInfo){
+		.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
+		.pCode = (const u32 *)data,
+		.codeSize = datalen,
+	};
+
+	if (vkCreateShaderModule(dev, &cinfo, NULL, shader) != VK_SUCCESS) {
+		printf("Couldn't create the shader module from the file \"%s\"!\n", binfile);
+		free(data);
+		return false;
+	}
+
+	free(data);
+	return true;
+}
+
+bool vk_generate_pipeline(
+	VkDevice dev,
+	const struct vk_gfx_pipeline_cinfo *cinfo,
+	VkPipeline *pipeline,
+	VkPipelineLayout *layout,
+	VkRenderPass *pass,
+	const char *vbin,
+	const char *fbin
+) {
+	if (vkCreatePipelineLayout(dev, &(VkPipelineLayoutCreateInfo){
+		.sType = VK_STRUCTURE_TYPE_PIPELINE_LAYOUT_CREATE_INFO,
+		.setLayoutCount = 0,
+		.pSetLayouts = NULL,
+		.pushConstantRangeCount = 0,
+		.pPushConstantRanges = NULL,
+	}, NULL, layout) != VK_SUCCESS) {
+		printf("Error creating pipeline layout!\n");
+		return false;
+	}
+
+	if (vkCreateRenderPass(dev, &(VkRenderPassCreateInfo){
+		.sType = VK_STRUCTURE_TYPE_RENDER_PASS_CREATE_INFO,
+		.attachmentCount = 1,
+		.pAttachments = (VkAttachmentDescription[]){
+			(VkAttachmentDescription){
+				.format = cinfo->scdata->fmt,
+				.samples = VK_SAMPLE_COUNT_1_BIT,
+				.loadOp = VK_ATTACHMENT_LOAD_OP_CLEAR,
+				.storeOp = VK_ATTACHMENT_STORE_OP_STORE,
+				.stencilLoadOp = VK_ATTACHMENT_LOAD_OP_DONT_CARE,
+				.stencilStoreOp = VK_ATTACHMENT_STORE_OP_DONT_CARE,
+				.initialLayout = VK_IMAGE_LAYOUT_UNDEFINED,
+				.finalLayout = VK_IMAGE_LAYOUT_PRESENT_SRC_KHR,
+			},
+		},
+		.subpassCount = 1,
+		.pSubpasses = (VkSubpassDescription[]){
+			(VkSubpassDescription){
+				.pipelineBindPoint = VK_PIPELINE_BIND_POINT_GRAPHICS,
+				.colorAttachmentCount = 1,
+				.pColorAttachments = (VkAttachmentReference[]) {
+					(VkAttachmentReference){
+						.attachment = 0,
+						.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
+					},
+				},
+			},
+		},
+	}, NULL, pass) != VK_SUCCESS) {
+		printf("Error creating render pass!\n");
+		return false;
+	}
+
+	VkShaderModule vert, frag;
+	if (!vk_shadermodule_init(dev, vbin, &vert)) {
+		printf("Couldn't create the vertex shader.\n");
+		return false;
+	}
+	if (!vk_shadermodule_init(dev, fbin, &frag)) {
+		vkDestroyShaderModule(dev, vert, NULL);
+		printf("Couldn't create the fragment shader.\n");
+		return false;
+	}
+
+	bool ret = false;
+	if (vkCreateGraphicsPipelines(
+		dev,
+		VK_NULL_HANDLE,
+		1,
+		(VkGraphicsPipelineCreateInfo[]){
+			(VkGraphicsPipelineCreateInfo){
+				.sType = VK_STRUCTURE_TYPE_GRAPHICS_PIPELINE_CREATE_INFO,
+				.stageCount = 2,
+				.pStages = (VkPipelineShaderStageCreateInfo[]){
+					(VkPipelineShaderStageCreateInfo){
+						.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+						.stage = VK_SHADER_STAGE_VERTEX_BIT,
+						.module = vert,
+						.pName = "main",
+					},
+					(VkPipelineShaderStageCreateInfo){
+						.sType = VK_STRUCTURE_TYPE_PIPELINE_SHADER_STAGE_CREATE_INFO,
+						.stage = VK_SHADER_STAGE_FRAGMENT_BIT,
+						.module = frag,
+						.pName = "main",
+					},
+				},
+				.layout = *layout,
+				.renderPass = *pass,
+				.subpass = 0,
+				.basePipelineHandle = VK_NULL_HANDLE,
+				.basePipelineIndex = 0,
+				.pInputAssemblyState = &(VkPipelineInputAssemblyStateCreateInfo){
+					.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO,
+					.topology = VK_PRIMITIVE_TOPOLOGY_TRIANGLE_LIST,
+					.primitiveRestartEnable = false,
+				},
+				.pVertexInputState = &(VkPipelineVertexInputStateCreateInfo){
+					.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO,
+					.vertexAttributeDescriptionCount = 0,
+					.pVertexAttributeDescriptions = NULL,
+					.vertexBindingDescriptionCount = 0,
+					.pVertexBindingDescriptions = NULL,
+				},
+				.pViewportState = &(VkPipelineViewportStateCreateInfo){
+					.sType = VK_STRUCTURE_TYPE_PIPELINE_VIEWPORT_STATE_CREATE_INFO,
+					.viewportCount = 1,
+					.scissorCount = 1,
+				},
+				.pDynamicState = &(VkPipelineDynamicStateCreateInfo){
+					.sType = VK_STRUCTURE_TYPE_PIPELINE_DYNAMIC_STATE_CREATE_INFO,
+					.dynamicStateCount = 2,
+					.pDynamicStates = (VkDynamicState[]){
+						VK_DYNAMIC_STATE_VIEWPORT,
+						VK_DYNAMIC_STATE_SCISSOR,
+					},
+				},
+				.pMultisampleState = &(VkPipelineMultisampleStateCreateInfo){
+					.sType = VK_STRUCTURE_TYPE_PIPELINE_MULTISAMPLE_STATE_CREATE_INFO,
+					.sampleShadingEnable = false,
+					.rasterizationSamples = VK_SAMPLE_COUNT_1_BIT,
+					.minSampleShading = 1.0f,
+					.pSampleMask = NULL,
+					.alphaToCoverageEnable = false,
+					.alphaToOneEnable = false,
+				},
+				.pRasterizationState = &(VkPipelineRasterizationStateCreateInfo){
+					.sType = VK_STRUCTURE_TYPE_PIPELINE_RASTERIZATION_STATE_CREATE_INFO,
+					.depthClampEnable = false,
+					.rasterizerDiscardEnable = false,
+					.lineWidth = 1.0f,
+					.polygonMode = VK_POLYGON_MODE_FILL,
+					.cullMode = VK_CULL_MODE_BACK_BIT,
+					.frontFace = VK_FRONT_FACE_COUNTER_CLOCKWISE,
+					.depthBiasEnable = false,
+					.depthBiasConstantFactor = 0.0f,
+					.depthBiasClamp = 0.0f,
+					.depthBiasSlopeFactor = 0.0f,
+				},
+				.pDepthStencilState = NULL,
+				.pColorBlendState = &(VkPipelineColorBlendStateCreateInfo) {
+					.sType = VK_STRUCTURE_TYPE_PIPELINE_COLOR_BLEND_STATE_CREATE_INFO,
+					.logicOpEnable = false,
+					.logicOp = VK_LOGIC_OP_COPY,
+					.attachmentCount = 1,
+					.pAttachments = (VkPipelineColorBlendAttachmentState[]){
+						(VkPipelineColorBlendAttachmentState){
+							.colorWriteMask =	VK_COLOR_COMPONENT_R_BIT |
+												VK_COLOR_COMPONENT_G_BIT |
+												VK_COLOR_COMPONENT_B_BIT |
+												VK_COLOR_COMPONENT_A_BIT,
+							.blendEnable = false,
+							.srcColorBlendFactor = VK_BLEND_FACTOR_SRC_ALPHA,
+							.dstColorBlendFactor = VK_BLEND_FACTOR_ONE_MINUS_SRC_ALPHA,
+							.colorBlendOp = VK_BLEND_OP_ADD,
+							.srcAlphaBlendFactor = VK_BLEND_FACTOR_ONE,
+							.dstAlphaBlendFactor = VK_BLEND_FACTOR_ZERO,
+							.alphaBlendOp = VK_BLEND_OP_ADD,
+						},
+					},
+					.blendConstants[0] = 0.0f,
+					.blendConstants[1] = 0.0f,
+					.blendConstants[2] = 0.0f,
+					.blendConstants[3] = 0.0f,
+				},
+			},
+		},
+		NULL,
+		pipeline
+	) != VK_SUCCESS) goto cleanup;
+	ret = true;
+cleanup:
+	vkDestroyShaderModule(dev, vert, NULL);
+	vkDestroyShaderModule(dev, frag, NULL);
+	return ret;
+}
+
