@@ -5,15 +5,15 @@
 
 #include "tools.h"
 
-struct camera {
+typedef struct camera {
 	vec3s pos;
 	vec2s rot;
-	f32 fov;
-};
+	float fov;
+} camera_t;
 
-struct camera camera_init(void);
-mat4s camera_get_proj(const struct camera *camera, f32 ratio);
-mat4s camera_get_view(const struct camera *camera);
+camera_t camera_init(void);
+mat4s camera_get_proj(const camera_t *camera, float ratio);
+mat4s camera_get_view(const camera_t *camera);
 
 #endif
 

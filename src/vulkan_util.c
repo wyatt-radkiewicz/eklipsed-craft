@@ -32,7 +32,7 @@ bool vk_instance_init(VkInstance *self, VkDebugUtilsMessengerEXT *dbgmsgr, SDL_W
 	const char **vnames = vector_init(const char *);
 
 	{
-		u32 nexts;
+		uint32_t nexts;
 		SDL_Vulkan_GetInstanceExtensions(sdl_window, &nexts, NULL);
 		vnames = vector_resize(vnames, nexts);
 		SDL_Vulkan_GetInstanceExtensions(sdl_window, &nexts, vnames);
@@ -51,14 +51,14 @@ bool vk_instance_init(VkInstance *self, VkDebugUtilsMessengerEXT *dbgmsgr, SDL_W
 	};
 	{
 		// Check for layer support
-		u32 nprops;
+		uint32_t nprops;
 		vkEnumerateInstanceLayerProperties(&nprops, NULL);
 		VkLayerProperties *props = malloc(sizeof(*props) * nprops);
 		vkEnumerateInstanceLayerProperties(&nprops, props);
 		
-		for (u32 i = 0; i < arrlen(layers); i++) {
+		for (uint32_t i = 0; i < arrlen(layers); i++) {
 			bool found = false;
-			for (u32 j = 0; j < nprops; j++) {
+			for (uint32_t j = 0; j < nprops; j++) {
 				found |= strcmp(props[j].layerName, layers[i]) == 0;
 			}
 			if (found) continue;
@@ -155,12 +155,12 @@ static bool is_dev_useable(VkPhysicalDevice dev, VkSurfaceKHR window_surf) {
 	bool has_queues = vk_get_queue_families(dev, NULL, window_surf);
 	bool has_swapchain_support = false;
 
-	u32 nexts;
+	uint32_t nexts;
 	vkEnumerateDeviceExtensionProperties(dev, NULL, &nexts, NULL);
 	VkExtensionProperties *exts = malloc(sizeof(*exts) * nexts);
 	vkEnumerateDeviceExtensionProperties(dev, NULL, &nexts, exts);
 
-	for (u32 i = 0; i < nexts; i++) {
+	for (uint32_t i = 0; i < nexts; i++) {
 		has_swapchain_support |= strcmp(exts[i].extensionName, VK_KHR_SWAPCHAIN_EXTENSION_NAME) == 0;
 	}
 
@@ -168,7 +168,7 @@ static bool is_dev_useable(VkPhysicalDevice dev, VkSurfaceKHR window_surf) {
 
 	if (!has_swapchain_support) return false;
 
-	u32 len;
+	uint32_t len;
 	vkGetPhysicalDeviceSurfaceFormatsKHR(dev, window_surf, &len, NULL);
 	if (!len) return false;
 	vkGetPhysicalDeviceSurfacePresentModesKHR(dev, window_surf, &len, NULL);
@@ -178,13 +178,13 @@ static bool is_dev_useable(VkPhysicalDevice dev, VkSurfaceKHR window_surf) {
 }
 
 VkPhysicalDevice vk_get_physdev(VkInstance inst, VkSurfaceKHR window_surf) {
-	u32 ndevs;
+	uint32_t ndevs;
 	vkEnumeratePhysicalDevices(inst, &ndevs, NULL);
 	VkPhysicalDevice *devs = malloc(sizeof(*devs) * ndevs);
 	vkEnumeratePhysicalDevices(inst, &ndevs, devs);
 
 	VkPhysicalDevice dev = VK_NULL_HANDLE;
-	for (u32 i = 0; i < ndevs; i++) {
+	for (uint32_t i = 0; i < ndevs; i++) {
 		if (is_dev_useable(devs[i], window_surf)) {
 			dev = devs[i];
 			break;
@@ -194,14 +194,14 @@ VkPhysicalDevice vk_get_physdev(VkInstance inst, VkSurfaceKHR window_surf) {
 	free(devs);
 	return dev;
 }
-bool vk_get_queue_families(VkPhysicalDevice dev, struct vk_queue_families *qf, VkSurfaceKHR present_surf) {
-	u32 nfams;
+bool vk_get_queue_families(VkPhysicalDevice dev, vk_queue_families_t *qf, VkSurfaceKHR present_surf) {
+	uint32_t nfams;
 	vkGetPhysicalDeviceQueueFamilyProperties(dev, &nfams, NULL);
 	VkQueueFamilyProperties *fams = malloc(sizeof(*fams) * nfams);
 	vkGetPhysicalDeviceQueueFamilyProperties(dev, &nfams, fams);
 
 	bool gfx_found = false, present_found = false;
-	for (u32 i = 0; i < nfams; i++) {
+	for (uint32_t i = 0; i < nfams; i++) {
 		if (fams[i].queueFlags & VK_QUEUE_GRAPHICS_BIT) {
 			gfx_found = true;
 			if (qf) qf->gfx = i;
@@ -220,7 +220,7 @@ bool vk_get_queue_families(VkPhysicalDevice dev, struct vk_queue_families *qf, V
 
 	return gfx_found || present_found;
 }
-bool vk_dev_init(VkDevice *dev, VkPhysicalDevice phys, const struct vk_queue_families *qf) {
+bool vk_dev_init(VkDevice *dev, VkPhysicalDevice phys, const vk_queue_families_t *qf) {
 	const VkDeviceCreateInfo cinfo = (VkDeviceCreateInfo){
 		.sType = VK_STRUCTURE_TYPE_DEVICE_CREATE_INFO,
 		.pQueueCreateInfos = (VkDeviceQueueCreateInfo[]){
@@ -270,16 +270,16 @@ bool vk_dev_init(VkDevice *dev, VkPhysicalDevice phys, const struct vk_queue_fam
 	return true;
 }
 
-bool vk_swapchain_init(VkDevice dev, VkPhysicalDevice phys, SDL_Window *target_window, const struct vk_queue_families *qf, VkSurfaceKHR window_surf, struct vk_swapchain_data *data) {
+bool vk_swapchain_init(VkDevice dev, VkPhysicalDevice phys, SDL_Window *target_window, const vk_queue_families_t *qf, VkSurfaceKHR window_surf, vk_swapchain_data_t *data) {
 	bool ret = false;
 
 	// Get the details of the physical device's swapchain support
-	u32 nformats;
+	uint32_t nformats;
 	vkGetPhysicalDeviceSurfaceFormatsKHR(phys, window_surf, &nformats, NULL);
 	VkSurfaceFormatKHR *formats = malloc(sizeof(*formats) * nformats);
 	vkGetPhysicalDeviceSurfaceFormatsKHR(phys, window_surf, &nformats, formats);
 
-	u32 nmodes;
+	uint32_t nmodes;
 	vkGetPhysicalDeviceSurfacePresentModesKHR(phys, window_surf, &nmodes, NULL);
 	VkPresentModeKHR *modes = malloc(sizeof(*modes) * nmodes);
 	vkGetPhysicalDeviceSurfacePresentModesKHR(phys, window_surf, &nmodes, modes);
@@ -290,16 +290,16 @@ bool vk_swapchain_init(VkDevice dev, VkPhysicalDevice phys, SDL_Window *target_w
 	// Choose best formats and modes
 	if (!nformats || !nmodes) goto cleanup;
 	VkSurfaceFormatKHR chosen_format = formats[0];
-	for (u32 i = 0; i < nformats; i++) {
+	for (uint32_t i = 0; i < nformats; i++) {
 		if (formats[i].colorSpace != VK_COLOR_SPACE_SRGB_NONLINEAR_KHR) continue;
 		if (formats[i].format == VK_FORMAT_R8G8B8A8_SRGB) chosen_format = formats[i];
 	}
 	VkPresentModeKHR chosen_mode = modes[0];
-	for (u32 i = 0; i < nmodes; i++) {
+	for (uint32_t i = 0; i < nmodes; i++) {
 		if (modes[i] == VK_PRESENT_MODE_MAILBOX_KHR) chosen_mode = modes[i];
 	}
 	VkExtent2D size;
-	if (caps.currentExtent.width == (u32)-1 || caps.currentExtent.height == (u32)-1) {
+	if (caps.currentExtent.width == (uint32_t)-1 || caps.currentExtent.height == (uint32_t)-1) {
 		size = caps.currentExtent;
 	} else {
 		int x, y;
@@ -309,7 +309,7 @@ bool vk_swapchain_init(VkDevice dev, VkPhysicalDevice phys, SDL_Window *target_w
 			.height = clamp(y, caps.minImageExtent.height, caps.maxImageExtent.height),
 		};
 	}
-	u32 nimgs = caps.maxImageCount == 0 ? caps.minImageCount + 1 : min(caps.minImageCount + 1, caps.maxImageCount);
+	uint32_t nimgs = caps.maxImageCount == 0 ? caps.minImageCount + 1 : min(caps.minImageCount + 1, caps.maxImageCount);
 
 	// Use those to create a swapchain
 	const VkSwapchainCreateInfoKHR cinfo = (VkSwapchainCreateInfoKHR){
@@ -323,7 +323,7 @@ bool vk_swapchain_init(VkDevice dev, VkPhysicalDevice phys, SDL_Window *target_w
 		
 		.imageSharingMode = qf->gfx == qf->present ? VK_SHARING_MODE_EXCLUSIVE : VK_SHARING_MODE_CONCURRENT,
 		.queueFamilyIndexCount = qf->gfx == qf->present ? 0 : 2,
-		.pQueueFamilyIndices = qf->gfx == qf->present ? NULL : (u32[]){ qf->gfx, qf->present },
+		.pQueueFamilyIndices = qf->gfx == qf->present ? NULL : (uint32_t[]){ qf->gfx, qf->present },
 
 		.preTransform = caps.currentTransform,
 		.compositeAlpha = VK_COMPOSITE_ALPHA_OPAQUE_BIT_KHR,
@@ -347,7 +347,7 @@ bool vk_swapchain_init(VkDevice dev, VkPhysicalDevice phys, SDL_Window *target_w
 
 	data->vviews = vector_init(*data->vviews);
 	data->vviews = vector_resize(data->vviews, vector_len(data->vimgs));
-	for (u32 i = 0; i < vector_len(data->vviews); i++) {
+	for (uint32_t i = 0; i < vector_len(data->vviews); i++) {
 		const VkImageViewCreateInfo cinfo = (VkImageViewCreateInfo){
 			.sType = VK_STRUCTURE_TYPE_IMAGE_VIEW_CREATE_INFO,
 			.image = data->vimgs[i],
@@ -368,6 +368,7 @@ bool vk_swapchain_init(VkDevice dev, VkPhysicalDevice phys, SDL_Window *target_w
 			goto cleanup;
 		}
 	}
+	data->vfbufs = NULL;
 
 	ret = true;
 cleanup:
@@ -375,23 +376,47 @@ cleanup:
 	free(modes);
 	return ret;
 }
-void vk_swapchain_deinit(struct vk_swapchain_data *self, VkDevice dev) {
-	for (u32 i = 0; i < vector_len(self->vviews); i++) {
+void vk_swapchain_deinit(vk_swapchain_data_t *self, VkDevice dev) {
+	for (uint32_t i = 0; i < vector_len(self->vviews); i++) {
+		if (self->vfbufs) vkDestroyFramebuffer(dev, self->vfbufs[i], NULL);
 		vkDestroyImageView(dev, self->vviews[i], NULL);
 	}
 	vector_deinit(self->vimgs);
 	vector_deinit(self->vviews);
+	if (self->vfbufs) vector_deinit(self->vfbufs);
 	vkDestroySwapchainKHR(dev, self->sc, NULL);
 }
 
+void vk_set_framebuffers_to_window_surface(VkDevice dev, vk_swapchain_data_t *data, VkRenderPass pass) {
+	if (!data->vfbufs) data->vfbufs = vector_init(*data->vfbufs);
+	data->vfbufs = vector_resize(data->vfbufs, vector_len(data->vimgs));
+
+	for (uint32_t i = 0; i < vector_len(data->vfbufs); i++) {
+		if (vkCreateFramebuffer(dev, &(VkFramebufferCreateInfo){
+			.sType = VK_STRUCTURE_TYPE_FRAMEBUFFER_CREATE_INFO,
+			.renderPass = pass,
+			.attachmentCount = 1,
+			.pAttachments = (VkImageView[]){
+				data->vviews[i],
+			},
+			.width = data->size.width,
+			.height = data->size.height,
+			.layers = 1,
+		}, NULL, data->vfbufs + i) != VK_SUCCESS) {
+			printf("Couldn't create framebuffers.\n");
+			return;
+		}
+	}
+}
+
 bool vk_shadermodule_init(VkDevice dev, const char *binfile, VkShaderModule *shader) {
-	u8 *data;
-	const usize datalen = loadfileb(binfile, &data);
+	uint8_t *data;
+	const size_t datalen = loadfileb(binfile, &data);
 	if (!datalen) return false;
 
 	VkShaderModuleCreateInfo cinfo = (VkShaderModuleCreateInfo){
 		.sType = VK_STRUCTURE_TYPE_SHADER_MODULE_CREATE_INFO,
-		.pCode = (const u32 *)data,
+		.pCode = (const uint32_t *)data,
 		.codeSize = datalen,
 	};
 
@@ -407,7 +432,7 @@ bool vk_shadermodule_init(VkDevice dev, const char *binfile, VkShaderModule *sha
 
 bool vk_generate_pipeline(
 	VkDevice dev,
-	const struct vk_gfx_pipeline_cinfo *cinfo,
+	const vk_gfx_pipeline_cinfo_t *cinfo,
 	VkPipeline *pipeline,
 	VkPipelineLayout *layout,
 	VkRenderPass *pass,
@@ -451,6 +476,17 @@ bool vk_generate_pipeline(
 						.layout = VK_IMAGE_LAYOUT_COLOR_ATTACHMENT_OPTIMAL,
 					},
 				},
+			},
+		},
+		.dependencyCount = 1,
+		.pDependencies = (VkSubpassDependency[]){
+			(VkSubpassDependency){
+				.srcSubpass = VK_SUBPASS_EXTERNAL,
+				.dstSubpass = 0,
+				.srcStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+				.srcAccessMask = 0,
+				.dstStageMask = VK_PIPELINE_STAGE_COLOR_ATTACHMENT_OUTPUT_BIT,
+				.dstAccessMask = VK_ACCESS_COLOR_ATTACHMENT_WRITE_BIT,
 			},
 		},
 	}, NULL, pass) != VK_SUCCESS) {
@@ -565,10 +601,10 @@ bool vk_generate_pipeline(
 							.alphaBlendOp = VK_BLEND_OP_ADD,
 						},
 					},
-					.blendConstants[0] = 0.0f,
-					.blendConstants[1] = 0.0f,
-					.blendConstants[2] = 0.0f,
-					.blendConstants[3] = 0.0f,
+					.blendConstants[0] = 1.0f,
+					.blendConstants[1] = 1.0f,
+					.blendConstants[2] = 1.0f,
+					.blendConstants[3] = 1.0f,
 				},
 			},
 		},

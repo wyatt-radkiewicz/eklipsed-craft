@@ -3,9 +3,9 @@
 #include "vulkan_util.h"
 
 static bool _sdl2_inited = false;
-static usize _num_windows = 0;
+static size_t _num_windows = 0;
 
-static void window_handle_event(struct window *window, const SDL_Event *event);
+static void window_handle_event(window_t *window, const SDL_Event *event);
 
 static bool sdl2_init(void) {
 	if (_sdl2_inited) return true;
@@ -19,10 +19,10 @@ static bool sdl2_init(void) {
 	return true;
 }
 
-bool window_init(struct window *self, const char *title, ivec2s size) {
+bool window_init(window_t *self, const char *title, ivec2s size) {
 	if (!sdl2_init()) return false;
 
-	*self = (struct window){ .size = size, .handlers = vector_init(*self->handlers) };
+	*self = (window_t){ .size = size, .handlers = vector_init(*self->handlers) };
 	self->sdl_window = SDL_CreateWindow(
 		title,
 		SDL_WINDOWPOS_CENTERED,
@@ -75,7 +75,7 @@ bool window_init(struct window *self, const char *title, ivec2s size) {
 	
 	return true;
 }
-void window_deinit(struct window *self) {
+void window_deinit(window_t *self) {
 	vk_swapchain_deinit(&self->vk_scdata, self->vk_dev);
 	vkDestroySurfaceKHR(self->vk_instance, self->vk_window_surf, NULL);
 	vkDestroyDevice(self->vk_dev, NULL);
@@ -91,22 +91,22 @@ void window_deinit(struct window *self) {
 
 	SDL_DestroyWindow(self->sdl_window);
 	vector_deinit(self->handlers);
-	*self = (struct window){0};
+	*self = (window_t){0};
 	_num_windows--;
 
 	if (_num_windows) return;
 	SDL_Quit();
 	_sdl2_inited = false;
 }
-void window_poll_events(struct window *self) {
+void window_poll_events(window_t *self) {
 	SDL_Event event;
 	while (SDL_PollEvent(&event)) {
-		for (u32 i = 0; i < vector_len(self->handlers); i++) {
+		for (uint32_t i = 0; i < vector_len(self->handlers); i++) {
 			if (self->handlers[i]) self->handlers[i](self, &event);
 		}
 	}
 }
-static void window_handle_event(struct window *window, const SDL_Event *event) {
+static void window_handle_event(window_t *window, const SDL_Event *event) {
 	switch (event->type) {
 	case SDL_QUIT:
 		window->should_close = true;
@@ -122,15 +122,15 @@ static void window_handle_event(struct window *window, const SDL_Event *event) {
 		break;
 	}
 }
-f32 window_get_ratio(struct window *self) {
-	return (f32)self->size.x / (f32)self->size.y;
+float window_get_ratio(window_t *self) {
+	return (float)self->size.x / (float)self->size.y;
 }
-void window_set_lock_mouse(struct window *self, bool lock) {
+void window_set_lock_mouse(window_t *self, bool lock) {
 	self->lock_mouse = lock;
 	SDL_SetWindowMouseGrab(self->sdl_window, lock);
 	SDL_SetRelativeMouseMode(lock);
 }
-void window_update_inputs(struct window *self) {
+void window_update_inputs(window_t *self) {
 	if (self->lock_mouse) {
 		SDL_GetRelativeMouseState(&self->mouserel.x, &self->mouserel.y);
 	}

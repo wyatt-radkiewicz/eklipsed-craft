@@ -17,7 +17,7 @@ char *loadfile(const char *path) {
 	FILE *file = fopen(path, "rb");
 	if (!file) return NULL;
 
-	usize size = fsize(file);
+	size_t size = fsize(file);
 	char *str = malloc(size + 1);
 	fread(str, size, 1, file);
 	str[size] = '\0';
@@ -25,11 +25,11 @@ char *loadfile(const char *path) {
 	fclose(file);
 	return str;
 }
-usize loadfileb(const char *path, u8 **bufptr) {
+size_t loadfileb(const char *path, uint8_t **bufptr) {
 	FILE *file = fopen(path, "rb");
 	if (!file) return 0;
 
-	usize size = fsize(file);
+	size_t size = fsize(file);
 	*bufptr = malloc(size);
 	fread(*bufptr, size, 1, file);
 	
@@ -39,7 +39,7 @@ usize loadfileb(const char *path, u8 **bufptr) {
 size_t fsize(FILE *file) {
 	long pos = ftell(file);
 	fseek(file, 0, SEEK_END);
-	usize size = ftell(file);
+	size_t size = ftell(file);
 	fseek(file, pos, SEEK_SET);
 	return size;
 }
@@ -55,18 +55,18 @@ const char *tmp_snprintf(const char *restrict format, ...) {
 	return _vectmp_snprintf;
 }
 
-void *_vector_init(u32 elemsize, u32 capacity) {
-	struct vector_hdr *header = malloc(sizeof(*header) + capacity * elemsize);
-	*header = (struct vector_hdr){ .len = 0, .capacity = capacity, };
+void *_vector_init(uint32_t elemsize, uint32_t capacity) {
+	vector_hdr_t *header = malloc(sizeof(*header) + capacity * elemsize);
+	*header = (vector_hdr_t){ .len = 0, .capacity = capacity, };
 	return header + 1;
 }
 void *_vector_deinit(void *self) {
-	struct vector_hdr *header = (struct vector_hdr *)self-1;
+	vector_hdr_t *header = (vector_hdr_t *)self-1;
 	free(header);
 	return NULL;
 }
-void *_vector_resize(void *self, u32 elemsize, u32 len) {
-	struct vector_hdr *header = (struct vector_hdr *)self-1;
+void *_vector_resize(void *self, uint32_t elemsize, uint32_t len) {
+	vector_hdr_t *header = (vector_hdr_t *)self-1;
 	header->len = len;
 
 	if (header->len > header->capacity) {
@@ -76,8 +76,8 @@ void *_vector_resize(void *self, u32 elemsize, u32 len) {
 
 	return header + 1;
 }
-void *_vector_reserve(void *self, u32 elemsize, u32 capacity) {
-	struct vector_hdr *header = (struct vector_hdr *)self-1;
+void *_vector_reserve(void *self, uint32_t elemsize, uint32_t capacity) {
+	vector_hdr_t *header = (vector_hdr_t *)self-1;
 
 	if (capacity > header->capacity) {
 		header->capacity = 1 << find_last_set(capacity);
@@ -86,8 +86,8 @@ void *_vector_reserve(void *self, u32 elemsize, u32 capacity) {
 	
 	return header + 1;
 }
-void *_vector_reserve_exact(void *self, u32 elemsize, u32 capacity) {
-	struct vector_hdr *header = (struct vector_hdr *)self-1;
+void *_vector_reserve_exact(void *self, uint32_t elemsize, uint32_t capacity) {
+	vector_hdr_t *header = (vector_hdr_t *)self-1;
 	if (header->capacity == capacity) return self;
 
 	header->capacity = !capacity ? 1 : capacity;
@@ -96,12 +96,12 @@ void *_vector_reserve_exact(void *self, u32 elemsize, u32 capacity) {
 	header = realloc(header, sizeof(*header) + elemsize * header->capacity);
 	return header + 1;
 }
-void *_vector_push(void *self, u32 elemsize, const void *val) {
+void *_vector_push(void *self, uint32_t elemsize, const void *val) {
 	self = _vector_resize(self, elemsize, vector_len(self) + 1);
-	memcpy((u8 *)self + elemsize * (vector_len(self) - 1), val, elemsize);
+	memcpy((uint8_t *)self + elemsize * (vector_len(self) - 1), val, elemsize);
 	return self;
 }
-void *_vector_pop(void *self, u32 elemsize) {
+void *_vector_pop(void *self, uint32_t elemsize) {
 	if (vector_len(self)) return _vector_resize(self, elemsize, vector_len(self) - 1);
 	else return self;
 }
