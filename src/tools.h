@@ -54,11 +54,11 @@
 	typeof(b) _b = (b); \
 	_a > _b ? _a : _b; \
 })
-#define clamp(a, mn, mx) ({ \
-	typeof(a) _a = (a); \
+#define clamp(x, mn, mx) ({ \
+	typeof(x) _x = (x); \
 	typeof(mn) _mn = (mn); \
 	typeof(mx) _mx = (mx); \
-	min(max(_a, _mn), _mx); \
+	min(max(_x, _mn), _mx); \
 })
 #define setbit(x, i) ((x) | (1 << (i)))
 #define clrbit(x, i) ((x) & ~(1 << (i)))

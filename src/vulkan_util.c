@@ -305,9 +305,11 @@ bool vk_swapchain_init(VkDevice dev, VkPhysicalDevice phys, SDL_Window *target_w
 		int x, y;
 		SDL_GetWindowSizeInPixels(target_window, &x, &y);
 		size = (VkExtent2D){
-			.width = clamp(x, caps.minImageExtent.width, caps.maxImageExtent.width),
-			.height = clamp(y, caps.minImageExtent.height, caps.maxImageExtent.height),
+			.width = clamp((uint32_t)x, caps.minImageExtent.width, caps.maxImageExtent.width),
+			.height = clamp((uint32_t)y, caps.minImageExtent.height, caps.maxImageExtent.height),
 		};
+		//printf("w: %d %d %d\n", x, caps.minImageExtent.width, caps.maxImageExtent.width);
+		//printf("h: %d %d %d\n", y, caps.minImageExtent.height, caps.maxImageExtent.height);
 	}
 	uint32_t nimgs = caps.maxImageCount == 0 ? caps.minImageCount + 1 : min(caps.minImageCount + 1, caps.maxImageCount);
 
